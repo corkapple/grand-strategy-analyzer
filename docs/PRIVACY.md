@@ -29,6 +29,8 @@ This is **on by default** so everyone's advice can get better. You can switch it
 **What is never sent:** screenshots, player or alliance names, coordinates, server, exact times, your keys, or anything
 about your computer.
 
+Each battle is shared **once**, even if you analyze the same screenshots again; the app keeps one record per fight.
+
 Settings has **Show the last payload**, so you can see exactly what was sent.
 
 **How it is handled:** the data goes to a small server that checks it, drops anything unexpected, and does not store

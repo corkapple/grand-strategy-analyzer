@@ -53,6 +53,9 @@ shows the troops the enemy had, so the app uses that as the enemy mix, and the b
 and the community stats (History marks it "from Battle Details"). Without Battle Details a battle on its own is still
 saved, but the app doesn't know what the enemy had, so it isn't used for the statistics.
 
+Analyzing the **same screenshots again** doesn't add a second copy: the app recognises the same fight and updates its record
+(keeping your Solo/Rally label), so your History and the shared statistics don't count it twice.
+
 > **Tip:** take recon and battle screenshots of the **same target close together**. The app matches them by the
 > target's coordinates and the time.
 

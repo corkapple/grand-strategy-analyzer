@@ -69,8 +69,12 @@ export function leadTroop(
 ): TroopType | null {
   const t = b.attacker.troops;
   if (t) {
+    // Models sometimes copy the defender's column into ours. Only trust troops that add up to our army.
+    const sum = TROOPS.reduce((s, k) => s + (t[k] ?? 0), 0);
+    const total = b.attacker.totalAssociates;
+    const plausible = sum > 0 && (total <= 0 || (sum >= total * 0.85 && sum <= total * 1.15));
     const top = TROOPS.map((k) => [k, t[k] ?? 0] as const).sort((x, y) => y[1] - x[1])[0];
-    if (top && top[1] > 0) return top[0];
+    if (plausible && top && top[1] > 0) return top[0];
   }
   const f = b.attacker.formation;
   if (!f) return null;
@@ -105,6 +109,19 @@ function sameTarget(a: Loc, b: Loc): boolean {
   if (a?.x == null || a?.y == null || b?.x == null || b?.y == null) return false;
   if (a.x !== b.x || a.y !== b.y) return false;
   return a.server == null || b.server == null || a.server === b.server;
+}
+
+/**
+ * Identifies one real event (this battle, this recon) so analysing the same screenshots again updates the
+ * record instead of adding a second copy. Null when there is not enough to tell (no time or no coordinates).
+ */
+export function fingerprint(r: HistoryRecord): string | null {
+  const loc = r.report.location;
+  if (!r.report.timestamp || loc?.x == null || loc?.y == null) return null;
+  const where = `${loc.server ?? ""}:${loc.x},${loc.y}`;
+  return r.kind === "battle"
+    ? `b|${r.report.timestamp}|${where}|${r.report.attacker.totalAssociates}|${r.report.defender.totalAssociates}`
+    : `r|${r.report.timestamp}|${where}|${r.report.associates.total}`;
 }
 
 /**

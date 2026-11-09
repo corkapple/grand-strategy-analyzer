@@ -36,7 +36,7 @@ const br: BattleRecord = { id: "b", kind: "battle", createdAt: Date.now(), thumb
 
 describe("sample", () => {
   const pair = pairBattles([rr, br])[0];
-  const s = buildSample(pair, "0.1.4", new Date("2026-11-09T10:00:00Z"))!;
+  const s = buildSample(pair, "0.1.14", new Date("2026-11-09T10:00:00Z"))!;
 
   it("keeps only rounded numbers and passes the server's validation", () => {
     expect(s).toMatchObject({ v: 1, day: "2026-11-09", result: "victory", level: 8, formation: "Hitman - Wedge", lead: "hitmen", ours: 2050000, enemyTotal: 2500000 });
@@ -61,7 +61,7 @@ describe("sample", () => {
 
 describe("aggregation", () => {
   const pair = pairBattles([rr, br])[0];
-  const s = buildSample(pair, "0.1.4", new Date("2026-11-09T10:00:00Z"))!;
+  const s = buildSample(pair, "0.1.14", new Date("2026-11-09T10:00:00Z"))!;
   it("uses the same majority rule as the app", () => {
     expect(serverKey(s.enemy)).toBe("bikers");
     expect(enemyKey({ bruisers: 0.1, hitmen: 0.04, bikers: 0.83 })).toBe("bikers");
@@ -81,7 +81,7 @@ describe("aggregation", () => {
 
 describe("samples from v0.1.4 (no lead field)", () => {
   const pair = pairBattles([rr, br])[0];
-  const s = buildSample(pair, "0.1.4", new Date("2026-11-09T10:00:00Z"))!;
+  const s = buildSample(pair, "0.1.14", new Date("2026-11-09T10:00:00Z"))!;
   const { lead: _lead, ...old } = s;
   void _lead;
   it("are still accepted by the server", () => {
@@ -105,8 +105,25 @@ describe("a battle counted from its Battle Details screen", () => {
     };
     const pair = pairBattles([withTroops])[0];
     expect(pair.recon?.synthetic).toBe(true);
-    const sample = buildSample({ ...pair }, "0.1.8", new Date("2026-11-09T10:00:00Z"));
+    const sample = buildSample({ ...pair }, "0.1.14", new Date("2026-11-09T10:00:00Z"));
     expect(sample?.enemy).toEqual({ bruisers: 98, hitmen: 1, bikers: 1, mortars: 0 });
     expect(validateSample(sample).ok).toBe(true);
+  });
+});
+
+describe("only trustworthy versions count", () => {
+  it("ignores samples from apps that counted a battle twice or guessed the lead troop", async () => {
+    const { aggregate, versionAtLeast, MIN_APP } = await import("../../../scripts/community-aggregate.mjs");
+    const pair = pairBattles([rr, br])[0];
+    const ok = buildSample(pair, MIN_APP, new Date("2026-11-09T10:00:00Z"))!;
+    const old = { ...ok, app: "0.1.13" };
+    const many = Array.from({ length: 12 }, () => old);
+    expect(aggregate(many).samples).toBe(0);
+    expect(aggregate([...many, ok]).samples).toBe(1);
+    expect(versionAtLeast("0.1.14")).toBe(true);
+    expect(versionAtLeast("0.1.20")).toBe(true);
+    expect(versionAtLeast("0.2.0")).toBe(true);
+    expect(versionAtLeast("0.1.9")).toBe(false);
+    expect(versionAtLeast("dev")).toBe(false);
   });
 });

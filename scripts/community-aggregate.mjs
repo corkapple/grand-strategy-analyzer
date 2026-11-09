@@ -36,8 +36,22 @@ export function enemyKey(e) {
   return "mixed";
 }
 
+/** Apps older than this counted the same battle more than once and could record the wrong lead troop. */
+export const MIN_APP = "0.1.14";
+const parts = (v) => String(v).split(/[.+-]/).slice(0, 3).map((n) => Number.parseInt(n, 10) || 0);
+export function versionAtLeast(app, min = MIN_APP) {
+  const a = parts(app);
+  const b = parts(min);
+  for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return (a[i] ?? 0) > (b[i] ?? 0);
+  return true;
+}
+
 export function aggregate(rawSamples, now = new Date()) {
-  const samples = rawSamples.map((s) => validateSample(s)).filter((v) => v.ok).map((v) => v.sample);
+  const samples = rawSamples
+    .map((s) => validateSample(s))
+    .filter((v) => v.ok)
+    .map((v) => v.sample)
+    .filter((s) => versionAtLeast(s.app));
   const groups = new Map();
   for (const s of samples) {
     const lead = leadOf(s);

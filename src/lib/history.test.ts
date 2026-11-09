@@ -117,6 +117,17 @@ describe("leadTroop: what the attack was led with", () => {
     expect(leadTroop(withFormation("Hitman - Wedge"))).toBe("hitmen");
     expect(leadTroop(withFormation("Bruiser - Wedge"))).toBe("bruisers");
   });
+  it("ignores attacker troops that add up to the enemy's army, not ours (a model copied the wrong column)", () => {
+    // Our army is 1.74M Bikers sent as "Hitman - Square"; the model returned the DEFENDER's 2.5M Bruiser-heavy column.
+    const b = parseBattleReport(
+      JSON.stringify({
+        result: "victory",
+        attacker: { formation: "Hitman - Square", totalAssociates: 1738596, troops: { bruisers: 2439200, hitmen: 25100, bikers: 35700, mortars: 0 } },
+        defender: { formation: "Bruiser - Square", totalAssociates: 2500000 },
+      }),
+    );
+    expect(leadTroop(b)).toBe("bikers"); // from the formation instead
+  });
   it("accepts unambiguous names and leaves the rest unknown", () => {
     expect(leadTroop(withFormation("Biker - Square"))).toBe("bikers");
     expect(leadTroop(withFormation("Bruiser - Square"))).toBe("bruisers");

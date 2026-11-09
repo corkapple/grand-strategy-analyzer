@@ -78,11 +78,11 @@ export default function AnalyzerView() {
         thumbs,
         provider: providerId,
       } as HistoryRecord;
-      await addRecord(record);
-      if (record.kind === "battle") void useCommunity.getState().shareBattle(record.id);
+      const stored = await addRecord(record);
+      if (stored.kind === "battle") void useCommunity.getState().shareBattle(stored.id);
       setNotice(
-        record.kind === "battle"
-          ? learningSummary(record as BattleRecord, useHistory.getState().records, strategy, lossCap)
+        stored.kind === "battle"
+          ? learningSummary(stored as BattleRecord, useHistory.getState().records, strategy, lossCap)
           : "Saved to History.",
       );
     } catch (e) {
