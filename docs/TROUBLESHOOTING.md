@@ -28,14 +28,19 @@ It is asking permission to read your saved key. Click **Always Allow**. You may 
 ## The result says "on-device reader (unverified)"
 
 Every AI service was unavailable, so the app gave you its own best reading of the screenshot. It could not confirm the
-numbers against the game's totals. Compare the key numbers with your screenshot, or try again later when an AI service
-is available.
+numbers against the game's totals, so it shows them but **does not save them**. Compare the key numbers with your
+screenshot, then click **Save anyway** if they are right, or try again later when an AI service is available.
 
 ## The app used the AI even though I want everything on my computer
 
 The on-device reader only answers when every number checks out. A blurry or cropped screenshot, or a screen the app
 doesn't know, makes it hand over to the AI service. Clear, uncropped screenshots work best. To never use an AI service,
 remove your keys in Settings. The app then gives you the on-device reading, marked unverified when it isn't certain.
+
+## "temporarily unavailable or overloaded" (error 503)
+
+That AI service is busy right now. The app waits a moment and tries it once more, then moves on to your next provider.
+You don't need to do anything.
 
 ## "Rate limit" or "free quota reached" (error 429)
 

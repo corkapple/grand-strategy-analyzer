@@ -68,6 +68,20 @@ export function joinUrl(base: string, path: string): string {
   return `${base.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
 }
 
+/** The human message inside a JSON error body ({"error":{"message":...}}), else the text itself; "" for an empty body. */
+export function plainDetail(body: string): string {
+  const t = body.trim();
+  if (!t || t === "{}" || t === "[]") return "";
+  try {
+    const j = JSON.parse(t) as { error?: { message?: string } | string; message?: string };
+    const m = typeof j.error === "string" ? j.error : (j.error?.message ?? j.message);
+    if (m) return m.trim();
+  } catch {
+    /* not JSON */
+  }
+  return t.slice(0, 300);
+}
+
 export async function postJson<T>(
   providerId: ProviderId,
   url: string,
@@ -109,7 +123,11 @@ export async function postJson<T>(
         429,
       );
     }
-    throw new ProviderError(`HTTP ${res.status} from ${providerId}: ${detail}`, providerId, res.status);
+    const said = plainDetail(detail);
+    if (res.status >= 500 && res.status <= 504) {
+      throw new ProviderError(`${providerId} is temporarily unavailable or overloaded (HTTP ${res.status})${said ? `: ${said}` : ""}`, providerId, res.status);
+    }
+    throw new ProviderError(`HTTP ${res.status} from ${providerId}${said ? `: ${said}` : ""}`, providerId, res.status);
   }
   try {
     // The timeout above only covers the wait for headers; a stalled body must not hang the app.

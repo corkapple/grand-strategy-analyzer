@@ -43,6 +43,14 @@ export interface OpenAICompatibleSpec {
  * anything else that speaks `POST {base}/chat/completions`.
  */
 const cooldown = new Map<string, number>();
+/** A short reason for a failed free model, for the one-line summary. */
+function reasonOf(e: Error): string {
+  const m = e.message.split("\n")[0];
+  if (/429|rate limit|quota/i.test(m)) return "rate limited";
+  if (/timed out|timeout/i.test(m)) return "too slow";
+  if (/404|does not exist|unavailable/i.test(m)) return "not available";
+  return m.replace(/\s+/g, " ").slice(0, 60);
+}
 /** Forget which free models recently failed (used by tests). */
 export function resetFreeModelCooldown() {
   cooldown.clear();
@@ -172,7 +180,13 @@ export function createOpenAICompatible(
     candidates = [...candidates.filter((m) => !cooling(m)), ...candidates.filter(cooling)];
 
     const errors: string[] = [];
+    // Free models are slow and often busy: give up after about a minute instead of walking the whole list.
+    const deadline = Date.now() + 75_000;
     for (const m of candidates) {
+      if (errors.length && Date.now() > deadline) {
+        errors.push("stopped waiting (the rest are untried)");
+        break;
+      }
       try {
         return await callOnce(req, cfg, m, 30_000);
       } catch (e) {
@@ -180,11 +194,11 @@ export function createOpenAICompatible(
         cooldown.set(m, Date.now() + (limited ? 10 : 3) * 60_000);
         if (req.signal?.aborted) throw new ProviderError("Cancelled", spec.id);
         if (e instanceof ProviderError && (e.status === 401 || e.status === 402 || e.status === 403)) throw e;
-        errors.push(`${m}: ${(e as Error).message.split("\n")[0].slice(0, 140)}`);
+        errors.push(`${m.replace(/:free$/, "")}: ${reasonOf(e as Error)}`);
       }
     }
     throw new ProviderError(
-      `All free models failed or timed out:\n- ${errors.join("\n- ")}\nTry again later, pick a specific model in Settings, or use Gemini.`,
+      `All free models failed or timed out (${errors.join("; ")}). Try again later, pick a specific model in Settings, or use Gemini.`,
       spec.id,
     );
   }
@@ -211,8 +225,9 @@ export function createOpenAICompatible(
         return await callOnce(req, cfg, model);
       } catch (e) {
         // The default model was retired: ask the provider what it has now and try the best match once.
-        if (!spec.discoverModel || userPicked || !(e instanceof ProviderError) || !(e.status === 404 || (e.status === 400 && /decommission|does not exist|not found/i.test(e.message)))) throw e;
+        if (!spec.discoverModel || !(e instanceof ProviderError) || !(e.status === 404 || (e.status === 400 && /decommission|does not exist|not found/i.test(e.message)))) throw e;
         const found = await discover(cfg, model).catch(() => null);
+        if (found === model) throw e;
         if (!found) throw e;
         const res = await callOnce(req, cfg, found);
         discovered.set(spec.id, found);

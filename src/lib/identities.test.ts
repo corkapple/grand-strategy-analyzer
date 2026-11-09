@@ -54,6 +54,11 @@ describe("parseBattleReport repairs a model's reading (the Gemini reply for a re
     expect(b.notes).toMatch(/Corrected your side/);
     expect(b.notes).toMatch(/Corrected the defender/);
   });
+  it("drops the model's own worry about the numbers we repaired, and lifts its 'low' confidence", () => {
+    const b = parseBattleReport(reply);
+    expect(b.notes).not.toMatch(/differs from the sum/);
+    expect(b.confidence).toBe("medium");
+  });
   it("makes the real losses right: wounded + dead is 2,167, not 1,367", () => {
     const b = parseBattleReport(reply);
     expect(b.attacker.wounded + b.attacker.dead).toBe(2167);

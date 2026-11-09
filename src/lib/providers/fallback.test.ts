@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { analyzeWithFallback, fallbackCandidates } from "./fallback";
+import { analyzeWithFallback, fallbackCandidates, retry } from "./fallback";
 import { defaultProviderConfigs } from "./registry";
 
 const req = { images: [], systemPrompt: "s", userPrompt: "u" };
@@ -43,7 +43,7 @@ describe("analyzeWithFallback", () => {
     const res = await analyzeWithFallback([GEMINI, OPENROUTER], req);
     expect(res.text).toContain("or");
     expect(calls).toEqual(["gemini", "openrouter"]);
-    expect(res.note).toMatch(/Gemini.*failed.*429.*retry in 9h59m41s.*answered by OpenRouter/);
+    expect(res.note).toMatch(/Gemini.*429.*retry in 9h59m41s[\s\S]*answered by OpenRouter/);
   });
 
   it("does not fall back on a bad key (401) or when the user cancelled", async () => {
@@ -200,5 +200,35 @@ describe("Groq's image limit", () => {
     const img = { base64: "AAAA", mimeType: "image/jpeg" };
     await expect(getProvider("groq").analyze({ images: [img, img, img, img], systemPrompt: "s", userPrompt: "u" }, { apiKey: "k" })).rejects.toThrow(/at most 3 images/);
     expect(calls).toEqual([]); // never even sent
+  });
+});
+
+describe("an overloaded provider (HTTP 503)", () => {
+  const busy = () => new Response("{}", { status: 503 });
+  it("is retried once and used when it answers the second time", async () => {
+    retry.delayMs = 0;
+    let n = 0;
+    const calls = net({ gemini: () => (++n === 1 ? busy() : geminiOk()), openrouter: orOk });
+    const res = await analyzeWithFallback([GEMINI, OPENROUTER], req);
+    expect(res.text).toContain("gemini");
+    expect(calls).toEqual(["gemini", "gemini"]);
+  });
+  it("moves on to the next provider when it is still busy, with a short readable reason", async () => {
+    retry.delayMs = 0;
+    const calls = net({ gemini: busy, openrouter: orOk });
+    const res = await analyzeWithFallback([GEMINI, OPENROUTER], req);
+    expect(calls).toEqual(["gemini", "gemini", "openrouter"]);
+    expect(res.note).toMatch(/temporarily unavailable or overloaded \(HTTP 503\)/);
+    expect(res.note).not.toMatch(/\{\}/); // no raw empty JSON
+    expect(res.note?.split("\n").length).toBeGreaterThan(1); // one provider per line
+  });
+});
+
+describe("plainDetail", () => {
+  it("pulls the message out of a provider's JSON error and ignores empty bodies", async () => {
+    const { plainDetail } = await import("./http");
+    expect(plainDetail('{"error":{"message":"The model `x` does not exist","type":"invalid_request_error"}}')).toBe("The model `x` does not exist");
+    expect(plainDetail("{}")).toBe("");
+    expect(plainDetail("plain text")).toBe("plain text");
   });
 });

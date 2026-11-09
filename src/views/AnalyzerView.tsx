@@ -38,6 +38,8 @@ export default function AnalyzerView() {
   const demo = import.meta.env.DEV || import.meta.env.MODE === "docs" ? (window as unknown as { __gsaDemo?: { recon?: CombatReport; battle?: BattleReport } }).__gsaDemo : undefined;
   const [recon, setRecon] = useState<CombatReport | null>(demo?.recon ?? null);
   const [battle, setBattle] = useState<BattleReport | null>(demo?.battle ?? null);
+  /** A best-effort reading nothing could verify: shown, but only saved if the user says so. */
+  const [unsaved, setUnsaved] = useState<{ r: AutoResult; shots: ImageInput[]; providerId: string } | null>(null);
   const [manual, setManual] = useState<{ prompt: string; reply: string } | null>(null);
   const abort = useRef<AbortController | null>(null);
 
@@ -59,6 +61,7 @@ export default function AnalyzerView() {
     setBattle(null);
     setManual(null);
     setReconFailed(false);
+    setUnsaved(null);
   };
 
   const save = async (
@@ -88,18 +91,28 @@ export default function AnalyzerView() {
   };
 
   /** Shows whatever the screenshots contained (recon, battle, or both) and saves it. */
-  const show = (r: AutoResult, shots: ImageInput[], providerId: string) => {
-    setRecon(r.recon);
-    setBattle(r.battle);
-    setReconFailed(r.reconFailed && !r.recon);
-    setError(null);
-    setRaw(null);
-    if (!saveHistory) return;
+  const saveResult = (r: AutoResult, shots: ImageInput[], providerId: string) => {
     // Recon first, so the battle's learning summary can pair with it.
     void (async () => {
       if (r.recon) await save({ kind: "recon", report: r.recon }, shots, providerId);
       if (r.battle) await save({ kind: "battle", report: r.battle }, shots, providerId);
     })();
+  };
+
+  const show = (r: AutoResult, shots: ImageInput[], providerId: string, verified = true) => {
+    setRecon(r.recon);
+    setBattle(r.battle);
+    setReconFailed(r.reconFailed && !r.recon);
+    setError(null);
+    setRaw(null);
+    setUnsaved(null);
+    if (!saveHistory) return;
+    // A reading nothing could confirm must not teach the playbook or the community stats by itself.
+    if (!verified) {
+      setUnsaved({ r, shots, providerId });
+      return;
+    }
+    saveResult(r, shots, providerId);
   };
 
   const fail = (e: unknown, text?: string) => {
@@ -165,7 +178,7 @@ export default function AnalyzerView() {
       }
       setAnsweredBy(res.model ?? null);
       if (res.note) setFallbackNote(res.note);
-      show(parsed, shots, res.providerId);
+      show(parsed, shots, res.providerId, !/unverified/i.test(res.model ?? ""));
     } catch (e) {
       fail(e);
     } finally {
@@ -196,7 +209,29 @@ export default function AnalyzerView() {
         {notice && <span className="text-xs text-green-400">{notice}</span>}
       </div>
 
-      {fallbackNote && <p className="text-xs text-amber-400">Fallback used: {fallbackNote}.</p>}
+      {unsaved && (
+        <div className="card flex flex-wrap items-center gap-3 border-amber-500/60 text-sm">
+          <span className="text-amber-400">
+            This reading could not be verified, so it was <b>not saved</b>. Check the numbers against your screenshot first.
+          </span>
+          <button
+            className="btn"
+            onClick={() => {
+              saveResult(unsaved.r, unsaved.shots, unsaved.providerId);
+              setUnsaved(null);
+            }}
+          >
+            Save anyway
+          </button>
+        </div>
+      )}
+
+      {fallbackNote && (
+        <p className="whitespace-pre-line text-xs text-amber-400">
+          Fallback used:{"\n"}
+          {fallbackNote}
+        </p>
+      )}
 
       {busy && elapsed >= 25 && (
         <p className="text-xs text-amber-400">

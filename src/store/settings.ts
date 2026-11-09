@@ -97,6 +97,11 @@ const initial = () => ({
   formationOverrides: {} as Partial<Record<TroopType, string>>,
 });
 
+/** Default models that providers have since retired, so a saved copy of one is replaced by the current default. */
+const RETIRED_MODELS: Record<string, string[]> = {
+  groq: ["meta-llama/llama-4-scout-17b-16e-instruct", "meta-llama/llama-4-maverick-17b-128e-instruct"],
+};
+
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
 
 function currentKeys(): Record<string, string> {
@@ -260,6 +265,11 @@ export const useSettings = create<SettingsState>()(
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<SettingsState>;
         const providers = { ...current.providers, ...(p.providers ?? {}) };
+        // Models providers have retired: a saved copy of the old default is not a choice the user made.
+        for (const [id, gone] of Object.entries(RETIRED_MODELS)) {
+          const cfg = providers[id as ProviderId];
+          if (cfg?.model && gone.includes(cfg.model)) providers[id as ProviderId] = { ...cfg, model: current.providers[id as ProviderId].model };
+        }
         // Saved defaults that no longer exist upstream: fall back to the current default.
         if (providers.openrouter?.model === "google/gemini-2.0-flash-exp:free") {
           providers.openrouter = { ...providers.openrouter, model: current.providers.openrouter.model };

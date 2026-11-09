@@ -59,6 +59,13 @@ export function fallbackCandidates(s: {
  * Tries each candidate in order. Moves on after a retryable failure (quota, timeout, outage);
  * stops on auth or no-credit errors and when the user cancels.
  */
+/** Wait before the single retry of an overloaded provider (tests set this to 0). */
+export const retry = { delayMs: 2000 };
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const isOverload = (e: unknown) => e instanceof ProviderError && (e.status === 502 || e.status === 503 || e.status === 504);
+/** One line, without the raw JSON some providers send. */
+const brief = (e: unknown) => (e as Error).message.split("\n")[0].replace(/\s+/g, " ").trim().slice(0, 200);
+
 export async function analyzeWithFallback(chain: Candidate[], req: VisionRequest): Promise<VisionResponse> {
   const skipped: string[] = [];
   let lastError: unknown;
@@ -72,20 +79,23 @@ export async function analyzeWithFallback(chain: Candidate[], req: VisionRequest
       continue;
     }
     try {
-      const res = await getProvider(c.id).analyze(req, c.config);
+      let res: VisionResponse;
+      try {
+        res = await getProvider(c.id).analyze(req, c.config);
+      } catch (first) {
+        // A busy provider (503) usually answers a moment later.
+        if (!isOverload(first) || req.signal?.aborted) throw first;
+        await sleep(retry.delayMs);
+        res = await getProvider(c.id).analyze(req, c.config);
+      }
       return skipped.length || c !== chain[0]
-        ? {
-            ...res,
-            note: [`${skipped.join("; ")}${skipped.length ? "; " : ""}answered by ${getProvider(c.id).label}`, res.note]
-              .filter(Boolean)
-              .join("; "),
-          }
+        ? { ...res, note: [...skipped, `answered by ${getProvider(c.id).label}`, res.note].filter(Boolean).join("\n") }
         : res;
     } catch (e) {
       if (req.signal?.aborted) throw e;
       lastError = e;
       if (!isRetryable(e)) throw e;
-      skipped.push(`${getProvider(c.id).label} failed (${(e as Error).message.split("\n")[0].slice(0, 240)})`);
+      skipped.push(`${getProvider(c.id).label}: ${brief(e)}`);
     }
   }
   if (lastError) {

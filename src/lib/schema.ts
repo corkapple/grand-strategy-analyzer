@@ -303,7 +303,12 @@ export function parseBattleReport(text: string): BattleReport {
       notes.push(`${who === "attacker" ? "Your side's" : "The defender's"} numbers do not add up; one of them may be misread.`);
     }
   }
-  if (notes.length) b.notes = [b.notes, ...notes].filter(Boolean).join(" ");
+  if (notes.length) {
+    const repaired = notes.every((n) => n.startsWith("Corrected"));
+    // The model's own worry ("Dead differs from Losses") described the numbers we just fixed, so it is dropped.
+    b.notes = (repaired ? notes : [b.notes, ...notes]).filter(Boolean).join(" ");
+    if (repaired && b.confidence === "low") b.confidence = "medium";
+  }
   return b;
 }
 
