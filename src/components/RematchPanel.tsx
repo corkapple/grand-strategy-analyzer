@@ -17,11 +17,14 @@ export default function RematchPanel({
   enemy,
   config,
   ledWith,
+  showEnemy = true,
 }: {
   battle: BattleReport;
   enemy: CombatReport | null;
   config: StrategyConfig;
   ledWith?: TroopType;
+  /** False when the enemy's own dashboard is already on screen. */
+  showEnemy?: boolean;
 }) {
   const records = useHistory((s) => s.records);
   const lossCap = useSettings((s) => s.lossCap);
@@ -58,7 +61,7 @@ export default function RematchPanel({
           ))}
         </ul>
       </section>
-      <Dashboard report={enemy} config={config} />
+      {showEnemy && <Dashboard report={enemy} config={config} />}
     </div>
   );
 }

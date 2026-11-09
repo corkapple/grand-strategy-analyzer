@@ -390,7 +390,7 @@ export default function AnalyzerView() {
           <span className="text-xs text-zinc-500">Your answer is saved with the battle and used for the advice and your stats.</span>
         </section>
       )}
-      {battle && !recon && <RematchPanel battle={battle} enemy={enemy} config={strategy} ledWith={savedBattle?.ledWith} />}
+      {battle && <RematchPanel battle={battle} enemy={enemy ?? recon} config={strategy} ledWith={savedBattle?.ledWith} showEnemy={!recon} />}
     </div>
   );
 }
