@@ -63,10 +63,19 @@ const baseName = (f: string) => f.split("(")[0].trim().toLowerCase();
  * Details), then the formation that the app's own advice pairs with exactly one troop type, then
  * unambiguous names (Biker..., Bruiser...), otherwise unknown.
  */
-export function leadTroop(
+export interface LeadInfo {
+  lead: TroopType | null;
+  /**
+   * "troops": read from the troop rows of Battle Details (reliable). "formation": a guess from the formation name
+   * (can be wrong: the same formation is used with different troops). "none": not known.
+   */
+  source: "troops" | "formation" | "none";
+}
+
+export function leadInfo(
   b: BattleReport,
   formations: Record<TroopType, string> = DEFAULT_STRATEGY.formations,
-): TroopType | null {
+): LeadInfo {
   const t = b.attacker.troops;
   if (t) {
     // Models sometimes copy the defender's column into ours. Only trust troops that add up to our army.
@@ -74,17 +83,22 @@ export function leadTroop(
     const total = b.attacker.totalAssociates;
     const plausible = sum > 0 && (total <= 0 || (sum >= total * 0.85 && sum <= total * 1.15));
     const top = TROOPS.map((k) => [k, t[k] ?? 0] as const).sort((x, y) => y[1] - x[1])[0];
-    if (plausible && top && top[1] > 0) return top[0];
+    if (plausible && top && top[1] > 0) return { lead: top[0], source: "troops" };
   }
   const f = b.attacker.formation;
-  if (!f) return null;
+  if (!f) return { lead: null, source: "none" };
   const name = baseName(f);
   const matches = TROOPS.filter((k) => baseName(formations[k]) === name);
-  if (matches.length === 1) return matches[0];
-  if (matches.length > 1) return null;
-  if (name.startsWith("biker")) return "bikers";
-  if (name.startsWith("bruiser")) return "bruisers";
-  return null;
+  if (matches.length === 1) return { lead: matches[0], source: "formation" };
+  if (matches.length > 1) return { lead: null, source: "none" };
+  if (name.startsWith("biker")) return { lead: "bikers", source: "formation" };
+  if (name.startsWith("bruiser")) return { lead: "bruisers", source: "formation" };
+  return { lead: null, source: "none" };
+}
+
+/** The lead troop, from the best available evidence (see `leadInfo` for how reliable it is). */
+export function leadTroop(b: BattleReport, formations: Record<TroopType, string> = DEFAULT_STRATEGY.formations): TroopType | null {
+  return leadInfo(b, formations).lead;
 }
 
 /**

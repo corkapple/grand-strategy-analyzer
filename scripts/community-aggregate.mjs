@@ -17,15 +17,9 @@ const median = (a) => {
 const avg = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
 const r = (v, d) => (v == null ? null : Math.round(v * 10 ** d) / 10 ** d);
 
-const DEFAULT_LEAD = { "hitman - wedge": "hitmen", "hitman - square": "bikers", "bruiser - wedge": "bruisers" };
-/** Lead troop of a sample. Samples from v0.1.4 only have the formation, so use the app's default pairing. */
+/** Lead troop of a sample. Only a lead the app actually read counts; a guess from the formation name does not. */
 export function leadOf(s) {
-  if (s.lead) return s.lead;
-  const f = (s.formation ?? "").toLowerCase();
-  if (DEFAULT_LEAD[f]) return DEFAULT_LEAD[f];
-  if (f.startsWith("biker")) return "bikers";
-  if (f.startsWith("bruiser")) return "bruisers";
-  return null;
+  return s.lead ?? null;
 }
 
 /** Majority type (>= 50% of the three field types) or "mixed". */
@@ -36,8 +30,8 @@ export function enemyKey(e) {
   return "mixed";
 }
 
-/** Apps older than this counted the same battle more than once, or took the troop types from the AI's icon guesses. */
-export const MIN_APP = "0.1.15";
+/** Apps older than this counted a battle twice, took troop types from icon guesses, or shared a lead guessed from the formation. */
+export const MIN_APP = "0.1.19";
 const parts = (v) => String(v).split(/[.+-]/).slice(0, 3).map((n) => Number.parseInt(n, 10) || 0);
 export function versionAtLeast(app, min = MIN_APP) {
   const a = parts(app);

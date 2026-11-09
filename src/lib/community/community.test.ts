@@ -36,10 +36,10 @@ const br: BattleRecord = { id: "b", kind: "battle", createdAt: Date.now(), thumb
 
 describe("sample", () => {
   const pair = pairBattles([rr, br])[0];
-  const s = buildSample(pair, "0.1.15", new Date("2026-11-09T10:00:00Z"))!;
+  const s = buildSample(pair, "0.1.19", new Date("2026-11-09T10:00:00Z"))!;
 
   it("keeps only rounded numbers and passes the server's validation", () => {
-    expect(s).toMatchObject({ v: 1, day: "2026-11-09", result: "victory", level: 8, formation: "Hitman - Wedge", lead: "hitmen", ours: 2050000, enemyTotal: 2500000 });
+    expect(s).toMatchObject({ v: 1, day: "2026-11-09", result: "victory", level: 8, formation: "Hitman - Wedge", lead: null, ours: 2050000, enemyTotal: 2500000 });
     expect(s.enemy).toEqual({ bruisers: 13, hitmen: 4, bikers: 83, mortars: 0 });
     expect(validateSample(s).ok).toBe(true);
   });
@@ -61,38 +61,40 @@ describe("sample", () => {
 
 describe("aggregation", () => {
   const pair = pairBattles([rr, br])[0];
-  const s = buildSample(pair, "0.1.15", new Date("2026-11-09T10:00:00Z"))!;
+  const s = buildSample(pair, "0.1.19", new Date("2026-11-09T10:00:00Z"))!;
   it("uses the same majority rule as the app", () => {
     expect(serverKey(s.enemy)).toBe("bikers");
     expect(enemyKey({ bruisers: 0.1, hitmen: 0.04, bikers: 0.83 })).toBe("bikers");
     expect(enemyKey({ bruisers: 40, hitmen: 30, bikers: 30 })).toBe("mixed");
   });
   it("groups by enemy type and lead troop, ignores invalid samples and shows a threshold", () => {
-    const many = Array.from({ length: MIN_COMMUNITY_N }, (_, i) => ({ ...s, result: i === 0 ? "defeat" : "victory", ourLoss: 0.02 }));
+    const many = Array.from({ length: MIN_COMMUNITY_N }, (_, i) => ({ ...s, lead: "hitmen", result: i === 0 ? "defeat" : "victory", ourLoss: 0.02 }));
     const stats = aggregate([...many, { junk: true }]);
     expect(stats.samples).toBe(MIN_COMMUNITY_N);
     const g = stats.groups[0];
     expect(g).toMatchObject({ enemy: "bikers", lead: "hitmen", n: MIN_COMMUNITY_N, wins: MIN_COMMUNITY_N - 1 });
     expect(g.winRate).toBeCloseTo(0.9, 3);
     expect(communityFor(stats, "bikers", "hitmen")).not.toBeNull();
-    expect(communityFor(aggregate([s]), "bikers", "hitmen")).toBeNull(); // too few reports
+    expect(communityFor(aggregate([{ ...s, lead: "hitmen" }]), "bikers", "hitmen")).toBeNull(); // too few reports
   });
 });
 
-describe("samples from v0.1.4 (no lead field)", () => {
+describe("a lead that was not read is never counted", () => {
   const pair = pairBattles([rr, br])[0];
-  const s = buildSample(pair, "0.1.15", new Date("2026-11-09T10:00:00Z"))!;
-  const { lead: _lead, ...old } = s;
-  void _lead;
-  it("are still accepted by the server", () => {
-    expect(validateSample(old).ok).toBe(true);
-    expect(validateSample({ ...s, lead: "bikers" }).ok).toBe(true);
-    expect(validateSample({ ...s, lead: "someone" }).ok).toBe(false);
+  const s = buildSample(pair, "0.1.19", new Date("2026-11-09T10:00:00Z"))!;
+  it("is not guessed from the formation name when building a sample", () => {
+    expect(s.formation).toBe("Hitman - Wedge");
+    expect(s.lead).toBeNull(); // no troop rows were read for our side
   });
-  it("are grouped by the lead troop the app pairs with their formation", () => {
-    const many = (formation: string) => Array.from({ length: MIN_COMMUNITY_N }, () => ({ ...old, formation }));
-    const stats = aggregate([...many("Hitman - Square"), ...many("Hitman - Wedge")]);
-    expect(stats.groups.map((g) => g.lead).sort()).toEqual(["bikers", "hitmen"]);
+  it("is taken from the troop rows when they were read", () => {
+    const rows = { ...br, report: { ...battle, attacker: { ...battle.attacker, troops: { bruisers: 21, hitmen: 13, bikers: battle.attacker.totalAssociates - 34, mortars: 0 } } } };
+    expect(buildSample(pairBattles([rr, rows])[0], "0.1.19")?.lead).toBe("bikers");
+  });
+  it("is left out of the statistics, and still accepted by the inbox", async () => {
+    const { aggregate } = await import("../../../scripts/community-aggregate.mjs");
+    expect(validateSample(s).ok).toBe(true);
+    const many = Array.from({ length: MIN_COMMUNITY_N }, () => s);
+    expect(aggregate(many).groups).toEqual([]);
   });
 });
 
@@ -105,7 +107,7 @@ describe("a battle counted from its Battle Details screen", () => {
     };
     const pair = pairBattles([withTroops])[0];
     expect(pair.recon?.synthetic).toBe(true);
-    const sample = buildSample({ ...pair }, "0.1.15", new Date("2026-11-09T10:00:00Z"));
+    const sample = buildSample({ ...pair }, "0.1.19", new Date("2026-11-09T10:00:00Z"));
     expect(sample?.enemy).toEqual({ bruisers: 98, hitmen: 1, bikers: 1, mortars: 0 });
     expect(validateSample(sample).ok).toBe(true);
   });
@@ -116,13 +118,13 @@ describe("only trustworthy versions count", () => {
     const { aggregate, versionAtLeast, MIN_APP } = await import("../../../scripts/community-aggregate.mjs");
     const pair = pairBattles([rr, br])[0];
     const ok = buildSample(pair, MIN_APP, new Date("2026-11-09T10:00:00Z"))!;
-    const old = { ...ok, app: "0.1.14" };
+    const old = { ...ok, app: "0.1.18" };
     const many = Array.from({ length: 12 }, () => old);
     expect(aggregate(many).samples).toBe(0);
     expect(aggregate([...many, ok]).samples).toBe(1);
-    expect(versionAtLeast("0.1.15")).toBe(true);
+    expect(versionAtLeast("0.1.19")).toBe(true);
     expect(versionAtLeast("0.1.20")).toBe(true);
-    expect(versionAtLeast("0.1.14")).toBe(false);
+    expect(versionAtLeast("0.1.18")).toBe(false);
     expect(versionAtLeast("0.2.0")).toBe(true);
     expect(versionAtLeast("0.1.9")).toBe(false);
     expect(versionAtLeast("dev")).toBe(false);

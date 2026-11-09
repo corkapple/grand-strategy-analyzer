@@ -19,7 +19,7 @@ import {
 } from "@/lib/schema";
 import RematchPanel from "@/components/RematchPanel";
 import { debugReport, lastRun, log, newRun } from "@/lib/log";
-import { leadTroop, pairBattles } from "@/lib/history";
+import { leadInfo, pairBattles } from "@/lib/history";
 import { useCommunity } from "@/store/community";
 import { useHistory } from "@/store/history";
 import { useSettings } from "@/store/settings";
@@ -200,7 +200,7 @@ export default function AnalyzerView() {
         battle: parsed.battle && {
           result: parsed.battle.result,
           confidence: parsed.battle.confidence,
-          attacker: { ...parsed.battle.attacker, lead: leadTroop(parsed.battle, strategy.formations) },
+          attacker: { ...parsed.battle.attacker, ...(({ lead, source }) => ({ lead, leadSource: source }))(leadInfo(parsed.battle, strategy.formations)) },
           defender: { ...parsed.battle.defender },
           enemyMixKnown: !!parsed.battle.defender.troops,
           notes: parsed.battle.notes,

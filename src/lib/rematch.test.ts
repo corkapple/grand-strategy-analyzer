@@ -38,6 +38,13 @@ describe("how to win after a defeat", () => {
     expect(text).toMatch(/Bruisers was the right lead/);
     expect(text).toMatch(/came down to numbers/);
   });
+  it("does not claim what you led with when your troop rows were not read (only the formation is known)", () => {
+    const a = rematchAdvice(battle("defeat", [], "Bruiser - Square"), enemy({}), DEFAULT_STRATEGY);
+    const text = a.lines.join(" ");
+    expect(text).not.toMatch(/You led with|right lead|came down to numbers/);
+    expect(text).toMatch(/could not be read from Battle Details, so check you led with Bruisers/);
+    expect(text).toMatch(/Send 100% Bruisers/);
+  });
   it("gives a plain next-attack plan after a win", () => {
     const a = rematchAdvice(battle("victory", [1022800, 20, 11]), enemy({}), DEFAULT_STRATEGY);
     expect(a.lost).toBe(false);

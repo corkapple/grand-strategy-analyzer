@@ -1,4 +1,4 @@
-import { effectiveLossRatio, enemyLossRatio, leadTroop, trapsDestroyedRatio, type Pair } from "../history";
+import { effectiveLossRatio, enemyLossRatio, leadInfo, trapsDestroyedRatio, type Pair } from "../history";
 import { buffEdge } from "../insights";
 import { DEFAULT_STRATEGY, FORMATION_NAMES, type TroopType } from "../strategy";
 
@@ -63,7 +63,8 @@ export function buildSample(
     enemy: { bruisers: pct(a.bruisers), hitmen: pct(a.hitmen), bikers: pct(a.bikers), mortars: pct(a.mortars) },
     enemyTotal: Math.min(enemyTotal, 20_000_000),
     formation,
-    lead: ((l) => (l === "mortars" ? null : l))(leadTroop(b, formations)),
+    // Only a lead that was READ from the troop rows is shared. A guess from the formation name would pollute the stats.
+    lead: ((i) => (i.source === "troops" && i.lead !== "mortars" ? i.lead : null))(leadInfo(b, formations)),
     ours: Math.min(ours, 20_000_000),
     ratio: Math.min(20, dp(b.attacker.totalAssociates / (recon.report.associates.total || total), 1)),
     ourLoss: Math.min(1, dp(effectiveLossRatio(b), 3)),
