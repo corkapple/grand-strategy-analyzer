@@ -3,6 +3,7 @@ import type { KnowledgeEntry } from "@/lib/knowledge";
 import { TROOP_LABEL } from "@/lib/strategy";
 import { useKnowledge } from "@/store/knowledge";
 import { useSettings } from "@/store/settings";
+import { inTauri } from "@/lib/secrets";
 
 function Entry({ e }: { e: KnowledgeEntry }) {
   const setStatus = useKnowledge((s) => s.setStatus);
@@ -93,6 +94,12 @@ export default function KnowledgeView() {
             in-game matchup chart cannot be accepted. Page text is sent to the AI provider you selected.
           </p>
         </div>
+        {!inTauri && (
+          <p className="rounded border border-amber-500/60 p-2 text-xs text-amber-300">
+            A web browser is not allowed to read other websites' pages, so guide checks fail here ("Failed to fetch"). Use the
+            desktop app for this tab; everything else works in the browser.
+          </p>
+        )}
         <label className="flex flex-wrap items-center gap-2 text-sm">
           <input type="checkbox" checked={s.autoUpdate} onChange={(e) => s.setAutoUpdate(e.target.checked)} />
           Check for updates automatically when the app starts, every
@@ -135,16 +142,16 @@ export default function KnowledgeView() {
         {urlError && <p className="text-xs text-red-400">{urlError}</p>}
 
         <div className="flex flex-wrap items-center gap-2">
-          <button className="btn btn-primary" disabled={checking} onClick={() => void check({})}>
+          <button className="btn btn-primary" disabled={checking || !inTauri} onClick={() => void check({})}>
             {checking ? "Checking…" : "Check now"}
           </button>
-          <button className="btn" disabled={checking} onClick={() => void check({ force: true })}>
+          <button className="btn" disabled={checking || !inTauri} onClick={() => void check({ force: true })}>
             Re-read even if unchanged
           </button>
         </div>
         <div className="space-y-2 border-t border-border/50 pt-3">
           <div className="flex flex-wrap items-center gap-2">
-            <button className="btn" disabled={discovering} onClick={() => void discover()}>
+            <button className="btn" disabled={discovering || !inTauri} onClick={() => void discover()}>
               {discovering ? "Searching…" : "Find new guides"}
             </button>
             <span className="text-xs text-zinc-500">

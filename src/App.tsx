@@ -8,6 +8,7 @@ import { useCommunity } from "./store/community";
 import { useHistory } from "./store/history";
 import { useKnowledge } from "./store/knowledge";
 import { useSettings } from "./store/settings";
+import { inTauri } from "./lib/secrets";
 import { startUpdateChecks, useUpdater } from "./store/updater";
 
 type View = "analyzer" | "history" | "knowledge" | "settings";
@@ -60,7 +61,7 @@ export default function App({ initialView = "analyzer" }: { initialView?: View }
     let timer: ReturnType<typeof setTimeout> | undefined;
     const run = () => {
       timer = setTimeout(() => {
-        if (useSettings.getState().autoUpdate) void useKnowledge.getState().check({ onlyDue: true });
+        if (inTauri && useSettings.getState().autoUpdate) void useKnowledge.getState().check({ onlyDue: true });
       }, 3000);
     };
     if (useSettings.getState().secretsReady) run();
