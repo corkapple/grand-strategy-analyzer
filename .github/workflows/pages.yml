@@ -35,6 +35,7 @@ jobs:
       - run: npm run build
         env:
           GSA_BASE: /grand-strategy-analyzer/
+          VITE_COMMUNITY_URL: ${{ vars.COMMUNITY_URL }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
