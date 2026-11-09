@@ -5,7 +5,9 @@ use std::fs::File;
 use std::net::{SocketAddr, TcpStream};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::AtomicU64;
+#[cfg(target_os = "macos")]
+use std::sync::atomic::Ordering;
 use std::sync::Mutex;
 use std::time::Duration;
 use tauri::{AppHandle, Manager, RunEvent, State};
