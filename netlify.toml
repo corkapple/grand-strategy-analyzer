@@ -1,0 +1,11 @@
+[build]
+  publish = "site"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[dev]
+  framework = "#static"
+  publish = "site"
+  autoLaunch = false

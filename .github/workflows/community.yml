@@ -1,0 +1,32 @@
+name: Community stats
+
+# GitHub is the hub: every day this pulls the anonymous samples from the inbox (the Cloudflare
+# Worker in worker/), archives them in data/samples/, recomputes data/community-stats.json,
+# commits both, and publishes the stats back so every copy of the app picks them up.
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  aggregate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Aggregate
+        env:
+          COMMUNITY_URL: ${{ vars.COMMUNITY_URL }}
+          EXPORT_TOKEN: ${{ secrets.EXPORT_TOKEN }}
+        run: node scripts/community-aggregate.mjs
+      - name: Commit data
+        run: |
+          git config user.name "gsa-bot"
+          git config user.email "gsa-bot@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || (git commit -m "Update community stats" && git push)

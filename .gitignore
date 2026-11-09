@@ -1,0 +1,16 @@
+node_modules
+dist
+src-tauri/target
+src-tauri/gen
+bridge/node_modules
+bridge/.profile
+.DS_Store
+src-tauri/binaries
+src-tauri/resources
+.claude
+*.log
+.env*
+data/samples/*.tmp
+.env
+.env.local
+.netlify
