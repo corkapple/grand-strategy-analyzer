@@ -111,4 +111,18 @@ describe("what you say you led with beats a guess", () => {
     expect(right).toMatch(/Bruisers was the right lead/);
     expect(right).toMatch(/came down to numbers/);
   });
+  it("shows the buffs of the fight and points at weak buffs when the wins had stronger ones", () => {
+    const withBuffs = (result: "victory" | "defeat", v: number) => {
+      const r = battle(result, [1022800, 20, 11]);
+      r.buffs = ["ATK", "DEF", "HP"].map((k) => ({ stat: `Bruiser ${k}`, attacker: v, defender: 0 }));
+      return r;
+    };
+    const lost = withBuffs("defeat", 100);
+    const won = withBuffs("victory", 700);
+    const pairs = [{ battle: { id: "w", kind: "battle", createdAt: 1, thumbs: [], report: won }, recon: null }] as never;
+    const text = rematchAdvice(lost, enemy({}), DEFAULT_STRATEGY, { pairs, lossCap: 1 }, "bruisers").lines.join(" ");
+    expect(text).toMatch(/Bruisers buffs in this fight: ATK \+100%/);
+    expect(text).toMatch(/weaker buffs, not the matchup/);
+    expect(rematchAdvice(battle("defeat", [1022800, 20, 11]), enemy({}), DEFAULT_STRATEGY).lines.join(" ")).toMatch(/Buff Comparison screen/);
+  });
 });

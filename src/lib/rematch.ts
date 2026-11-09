@@ -37,6 +37,22 @@ export function smallestCounterWin(pairs: Pair[], cfg: StrategyConfig, lossCap: 
   return n ? { ratio: min, n } : null;
 }
 
+const BUFF_NAME: Record<string, string> = { bruisers: "Bruiser", hitmen: "Hitman", bikers: "Biker" };
+
+/** The attacker's ATK + DEF + HP buff (in percent points) for one troop type, from a Buff Comparison screen. */
+export function troopBuffs(b: BattleReport, troop: TroopType): { atk: number; def: number; hp: number; sum: number } | null {
+  const name = BUFF_NAME[troop];
+  if (!name) return null;
+  const get = (k: string) => b.buffs.find((x) => new RegExp(`^${name}\\s*${k}$`, "i").test(x.stat.trim()))?.attacker;
+  const atk = get("ATK");
+  const def = get("DEF");
+  const hp = get("HP");
+  if (atk == null || def == null || hp == null) return null;
+  return { atk, def, hp, sum: atk + def + hp };
+}
+
+const fmtBuffs = (v: { atk: number; def: number; hp: number }) => `ATK +${Math.round(v.atk)}%, DEF +${Math.round(v.def)}%, HP +${Math.round(v.hp)}%`;
+
 export function rematchAdvice(
   b: BattleReport,
   recon: CombatReport,
@@ -84,6 +100,26 @@ export function rematchAdvice(
       `Your ${win.n} counter-matched win${win.n > 1 ? "s" : ""} so far used at least ${win.ratio.toFixed(2)}x the enemy's army, about ${need.toLocaleString("en-US")} associates against this one.` +
         (fewer ? ` You sent ${b.attacker.totalAssociates.toLocaleString("en-US")}, so bring about ${(need - b.attacker.totalAssociates).toLocaleString("en-US")} more.` : ""),
     );
+  }
+  // Buffs decide fights as much as numbers do: compare this fight's buffs for the counter troop with your wins.
+  if (want) {
+    const mine = troopBuffs(b, want);
+    if (mine) {
+      let weakestWin: { atk: number; def: number; hp: number; sum: number } | null = null;
+      for (const p of history?.pairs ?? []) {
+        if (p.battle.report === b || p.battle.report.result !== "victory") continue;
+        const v = troopBuffs(p.battle.report, want);
+        if (v && (!weakestWin || v.sum < weakestWin.sum)) weakestWin = v;
+      }
+      lines.push(`Your ${TROOP_LABEL[want]} buffs in this fight: ${fmtBuffs(mine)}.`);
+      if (lost && weakestWin && mine.sum < weakestWin.sum * 0.9) {
+        lines.push(
+          `Your wins with ${TROOP_LABEL[want]} had stronger buffs (at least ${fmtBuffs(weakestWin)}), so weaker buffs, not the matchup, are the likely gap. Raise them (research, gear, heroes) or bring more troops.`,
+        );
+      }
+    } else if (lost) {
+      lines.push("Include the Buff Comparison screen next time: buffs often decide a fight and the app can then compare yours with your wins.");
+    }
   }
   lines.push(verdictText(s.verdict));
 
