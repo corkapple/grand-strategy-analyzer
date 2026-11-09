@@ -37,6 +37,16 @@ export function repairSide(input: SideNumbers): Repair {
   // Nothing was read for this side (for example a failed screenshot): nothing to check.
   if (!s.totalAssociates && !s.losses && !s.alive && !s.dead) return { side: s, changes, consistent: true };
 
+  // A model that could not read a figure often returns 0 for it. Fill those first, from the other numbers.
+  if (!holds1(s) && s.alive === 0 && s.totalAssociates > 0) {
+    const alive = s.totalAssociates - s.wounded - s.dead;
+    if (alive > 0) set("alive", "alive", alive);
+  }
+  if (!holds2(s) && s.losses === 0) {
+    const losses = s.wounded + s.dead + s.casualtiesReduced;
+    if (losses > 0) set("losses", "losses", losses);
+  }
+
   const ok1 = holds1(s);
   const ok2 = holds2(s);
   if (ok1 && ok2) return { side: s, changes, consistent: true };

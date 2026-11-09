@@ -156,18 +156,18 @@ describe("free-provider chain and Mesh", () => {
 
 describe("a provider whose default model was retired", () => {
   const body = (model: string) => ({ model, choices: [{ message: { content: '{"ok":true}' } }] });
-  it("looks up a current vision model and uses it (Groq's Llama 4 Scout was pulled)", async () => {
+  it("looks up a current vision model and uses it (Groq pulled Llama 4; a successor to the default can be found the same way)", async () => {
     const asked: string[] = [];
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string, init?: RequestInit) => {
         if (url.endsWith("/models")) {
-          return new Response(JSON.stringify({ data: [{ id: "whisper-large-v3" }, { id: "llama-3.3-70b-versatile" }, { id: "meta-llama/llama-4-maverick-17b-128e-instruct" }] }), { status: 200 });
+          return new Response(JSON.stringify({ data: [{ id: "whisper-large-v3" }, { id: "llama-3.3-70b-versatile" }, { id: "qwen/qwen3.9-30b" }] }), { status: 200 });
         }
         const model = JSON.parse(String(init?.body)).model as string;
         asked.push(model);
-        return model.includes("scout")
-          ? new Response('{"error":{"message":"The model `meta-llama/llama-4-scout-17b-16e-instruct` does not exist"}}', { status: 404 })
+        return model === "qwen/qwen3.8-27b"
+          ? new Response('{"error":{"message":"The model `qwen/qwen3.8-27b` does not exist"}}', { status: 404 })
           : new Response(JSON.stringify(body(model)), { status: 200 });
       }),
     );
@@ -176,12 +176,12 @@ describe("a provider whose default model was retired", () => {
       { images: [{ base64: "AAAA", mimeType: "image/jpeg" }], systemPrompt: "s", userPrompt: "u" },
       { apiKey: "k", model: getProvider("groq").defaultConfig.model },
     );
-    expect(asked).toEqual(["meta-llama/llama-4-scout-17b-16e-instruct", "meta-llama/llama-4-maverick-17b-128e-instruct"]);
+    expect(asked).toEqual(["qwen/qwen3.8-27b", "qwen/qwen3.9-30b"]);
     expect(res.note).toMatch(/no longer offered/);
     // The next request goes straight to the model that worked.
     asked.length = 0;
     await getProvider("groq").analyze({ images: [{ base64: "AAAA", mimeType: "image/jpeg" }], systemPrompt: "s", userPrompt: "u" }, { apiKey: "k", model: getProvider("groq").defaultConfig.model });
-    expect(asked).toEqual(["meta-llama/llama-4-maverick-17b-128e-instruct"]);
+    expect(asked).toEqual(["qwen/qwen3.9-30b"]);
   });
   it("leaves a model the user chose alone", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response('{"error":{"message":"model does not exist"}}', { status: 404 })));
@@ -189,5 +189,16 @@ describe("a provider whose default model was retired", () => {
     await expect(
       getProvider("groq").analyze({ images: [], systemPrompt: "s", userPrompt: "u" }, { apiKey: "k", model: "my-own-model" }),
     ).rejects.toThrow(/does not exist|unavailable/);
+  });
+});
+
+describe("Groq's image limit", () => {
+  it("hands over to the next provider instead of failing when more than 3 screenshots are sent", async () => {
+    const calls: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => (calls.push(url), new Response("{}", { status: 500 }))));
+    const { getProvider } = await import("./registry");
+    const img = { base64: "AAAA", mimeType: "image/jpeg" };
+    await expect(getProvider("groq").analyze({ images: [img, img, img, img], systemPrompt: "s", userPrompt: "u" }, { apiKey: "k" })).rejects.toThrow(/at most 3 images/);
+    expect(calls).toEqual([]); // never even sent
   });
 });

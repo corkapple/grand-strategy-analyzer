@@ -36,7 +36,9 @@ choose it under **Provider**, paste its key into **API key**, and click **Test c
 > We have not been able to test every one of these with a real account, and free plans change often. If one says
 > "model not found", click **Test connection** to see the current models and type a vision-capable one into **Model**.
 
-- **Groq (free tier).** Get a key at **https://console.groq.com/keys**. It is very fast, with daily limits.
+- **Groq (free tier).** Get a key at **https://console.groq.com/keys**. It is very fast, with daily limits. It reads at most 3
+  screenshots at a time, so a bigger drop goes to your next provider. Groq retires models now and then; the app then looks up a
+  current one itself, and **Test connection** lists the models your key can use.
 - **GitHub Models (free for GitHub accounts).** Create a token at **https://github.com/settings/personal-access-tokens**
   (a "fine-grained" token with the **Models: read** permission) and paste that token as the key. It is not your
   password. It comes with a small daily allowance.

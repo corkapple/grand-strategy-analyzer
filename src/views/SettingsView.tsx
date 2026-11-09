@@ -49,7 +49,7 @@ export default function SettingsView() {
         >
           {(Object.keys(GROUP_LABEL) as (keyof typeof GROUP_LABEL)[]).map((g) => (
             <optgroup key={g} label={GROUP_LABEL[g]}>
-              {PROVIDER_LIST.filter((p) => p.group === g).map((p) => (
+              {PROVIDER_LIST.filter((p) => p.group === g && !p.capabilities.textOnly).map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.label}
                 </option>

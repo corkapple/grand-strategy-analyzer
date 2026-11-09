@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { defaultProviderConfigs } from "@/lib/providers/registry";
+import { defaultProviderConfigs, getProvider } from "@/lib/providers/registry";
 import type { ProviderConfig, ProviderId } from "@/lib/providers";
 import { KEYS_ACCOUNT, apiKeyAccount, getSecret, setSecret } from "@/lib/secrets";
 import type { Source } from "@/lib/knowledge";
@@ -273,7 +273,9 @@ export const useSettings = create<SettingsState>()(
           formations: { ...DEFAULT_STRATEGY.formations, ...formationOverrides },
           thresholds: { ...DEFAULT_STRATEGY.thresholds, ...(p.strategy?.thresholds ?? {}) },
         };
-        return { ...current, ...p, providers, strategy, formationOverrides };
+        // A text-only provider (Mesh) cannot read screenshots, so it cannot be the main provider.
+        const active = p.activeProvider && !getProvider(p.activeProvider).capabilities.textOnly ? p.activeProvider : current.activeProvider;
+        return { ...current, ...p, activeProvider: active, providers, strategy, formationOverrides };
       },
       // useSettings is not assigned yet while this runs, so defer.
       onRehydrateStorage: () => () => {

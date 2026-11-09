@@ -31,6 +31,8 @@ export interface OpenAICompatibleSpec {
    * exists (providers rename and retire models). Only used while the user has not chosen a model themselves.
    */
   discoverModel?: RegExp[];
+  /** The most images the provider accepts in one request. */
+  maxImages?: number;
   /** Output token cap (reasoning models spend part of it thinking, so give them room). */
   maxTokens?: number;
   extraHeaders?: Record<string, string>;
@@ -199,6 +201,10 @@ export function createOpenAICompatible(
       if (spec.id === "openrouter" && chosen === "openrouter/free") {
         return analyzeWithFallback(req, cfg);
       }
+      if (spec.maxImages && req.images.length > spec.maxImages) {
+        // Not a problem with your key or the model: the next provider can take all the screenshots.
+        throw new ProviderError(`${spec.label} accepts at most ${spec.maxImages} images per request; you sent ${req.images.length}.`, spec.id);
+      }
       const userPicked = chosen !== spec.defaultModel;
       const model = (!userPicked && discovered.get(spec.id)) || chosen;
       try {
@@ -220,7 +226,8 @@ export function createOpenAICompatible(
         joinUrl(baseOf(cfg), "models"),
         headersFor(cfg),
       );
-      return `OK. ${data.data?.length ?? 0} models visible.`;
+      const ids = (data.data ?? []).map((m) => m.id);
+      return `OK. ${ids.length} models visible${ids.length ? `: ${ids.slice(0, 25).join(", ")}${ids.length > 25 ? ", ..." : ""}` : "."}`;
     },
   };
 }
@@ -289,14 +296,16 @@ export const groq = createOpenAICompatible({
   label: "Groq (free tier)",
   group: "free-api",
   defaultBaseUrl: "https://api.groq.com/openai/v1",
-  defaultModel: "meta-llama/llama-4-scout-17b-16e-instruct",
-  discoverModel: [/llama-4-(maverick|scout)/i, /vision/i, /qwen.*vl/i],
+  // Groq retired Llama 4; its docs now list Qwen 3.8 for images (at most 3 per request).
+  defaultModel: "qwen/qwen3.8-27b",
+  discoverModel: [/qwen\/qwen3\.\d+/i, /llama-4-(maverick|scout)/i, /vision|\bvl\b/i],
+  maxImages: 3,
   capabilities: {
     vision: true,
     requiresApiKey: true,
     local: false,
     notes:
-      "Free key at console.groq.com/keys. Fast, with daily limits. Groq changes its model list: if you get a 'model not found' error, click Test connection to see the current models and type a vision model's name in Model.",
+      "Free key at console.groq.com/keys. Fast, with daily limits. Reads at most 3 screenshots at a time. Groq changes its model list: the app looks up a current vision model by itself if the default disappears; Test connection lists what your key can use.",
   },
 });
 

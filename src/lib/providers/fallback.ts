@@ -85,7 +85,7 @@ export async function analyzeWithFallback(chain: Candidate[], req: VisionRequest
       if (req.signal?.aborted) throw e;
       lastError = e;
       if (!isRetryable(e)) throw e;
-      skipped.push(`${getProvider(c.id).label} failed (${(e as Error).message.split("\n")[0].slice(0, 110)})`);
+      skipped.push(`${getProvider(c.id).label} failed (${(e as Error).message.split("\n")[0].slice(0, 240)})`);
     }
   }
   if (lastError) {

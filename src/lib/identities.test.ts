@@ -19,6 +19,12 @@ describe("repairSide: the game's arithmetic", () => {
     expect(r.side.alive).toBe(899362);
     expect(r.consistent).toBe(true);
   });
+  it("fills both Alive and Losses when the model returned 0 for both", () => {
+    const r = repairSide({ totalAssociates: 2500000, wounded: 0, dead: 1600638, alive: 0, casualtiesReduced: 0, losses: 0 });
+    expect(r.side.alive).toBe(899362);
+    expect(r.side.losses).toBe(1600638);
+    expect(r.consistent).toBe(true);
+  });
   it("does not guess when two non-zero numbers disagree and either could be the wrong one", () => {
     const r = repairSide({ totalAssociates: 1862033, wounded: 766, dead: 170, alive: 1859097, casualtiesReduced: 291033, losses: 291969 });
     expect(r.changes).toEqual([]);
