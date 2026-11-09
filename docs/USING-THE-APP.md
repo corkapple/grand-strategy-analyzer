@@ -53,6 +53,10 @@ The app saves the result and pairs it with the recon of the same target. It then
 and simply too few associates. If it can't tell what the enemy had, it falls back to the default full Bikers raid. It also tells you **how many associates to
 bring**: the smallest army, as a share of the enemy's, that has won for you before with the right counter and acceptable losses.
 
+**What did you lead with?** The AI can't always read which troops you sent. When it can't, the app asks you: click
+**Bruisers**, **Hitmen** or **Bikers**. Your answer is saved with the battle (you can change it later in History) and is used for the
+advice, your statistics and the shared community stats. The app never guesses this from your formation name.
+
 **No recon? That works too.** You can send just the victory mail together with its **Battle Details** screen. Battle Details
 shows the troops the enemy had, so the app uses that as the enemy mix, and the battle still counts in History, your playbook
 and the community stats (History marks it "from Battle Details"). Without Battle Details a battle on its own is still

@@ -1,6 +1,6 @@
 import { effectiveLossRatio, enemyLossRatio, leadInfo, recommendedLead, type Pair } from "./history";
 import type { BattleReport, CombatReport } from "./schema";
-import { computeStrategy, TROOP_LABEL, verdictText, type StrategyConfig } from "./strategy";
+import { computeStrategy, TROOP_LABEL, verdictText, type StrategyConfig, type TroopType } from "./strategy";
 
 export interface Rematch {
   /** True when the attack was lost. */
@@ -27,7 +27,7 @@ export function smallestCounterWin(pairs: Pair[], cfg: StrategyConfig, lossCap: 
     if (rb.result !== "victory" || !recon) continue;
     const dom = computeStrategy(recon.report, cfg).dominant;
     const counter = dom ? cfg.counters[dom] : null;
-    if (!counter || leadInfo(rb, cfg.formations).lead !== counter) continue;
+    if (!counter || leadInfo(rb, cfg.formations, battle.ledWith).lead !== counter) continue;
     if (effectiveLossRatio(rb) > lossCap) continue;
     const theirs = rb.defender.totalAssociates || recon.report.associates.total;
     if (!theirs || !rb.attacker.totalAssociates) continue;
@@ -42,10 +42,12 @@ export function rematchAdvice(
   recon: CombatReport,
   cfg: StrategyConfig,
   history?: { pairs: Pair[]; lossCap: number },
+  /** What the user said they led with, when the troop rows could not be read. */
+  ledWith?: TroopType,
 ): Rematch {
   const s = computeStrategy(recon, cfg);
-  const { lead, source } = leadInfo(b, cfg.formations);
-  const known = source === "troops"; // only say what you led with when it was actually read from the troop rows
+  const { lead, source } = leadInfo(b, cfg.formations, ledWith);
+  const known = source === "troops" || source === "you"; // only say what you led with when it was read or you said so
   const want = recommendedLead(recon, cfg);
   const lost = b.result === "defeat";
   const theirs = b.defender.totalAssociates || recon.associates.total;

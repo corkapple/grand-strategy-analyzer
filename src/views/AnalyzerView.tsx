@@ -19,7 +19,8 @@ import {
 } from "@/lib/schema";
 import RematchPanel from "@/components/RematchPanel";
 import { debugReport, lastRun, log, newRun } from "@/lib/log";
-import { leadInfo, pairBattles } from "@/lib/history";
+import { fingerprint, leadInfo, pairBattles } from "@/lib/history";
+import { TROOP_LABEL } from "@/lib/strategy";
 import { useCommunity } from "@/store/community";
 import { useHistory } from "@/store/history";
 import { useSettings } from "@/store/settings";
@@ -58,6 +59,14 @@ export default function AnalyzerView() {
 
   const provider = getProvider(activeProvider);
   const records = useHistory((s) => s.records);
+  const setLedWith = useHistory((s) => s.setLedWith);
+  // The saved copy of the battle on screen (it holds what the user says they led with).
+  const savedBattle = useMemo(() => {
+    if (!battle) return null;
+    const fp = fingerprint({ id: "v", kind: "battle", createdAt: 0, thumbs: [], report: battle });
+    return fp ? ((records.find((r) => r.kind === "battle" && fingerprint(r) === fp) as BattleRecord | undefined) ?? null) : null;
+  }, [battle, records]);
+  const leadSource = battle ? leadInfo(battle, strategy.formations, savedBattle?.ledWith).source : null;
   // The enemy this battle faced: a recon of the same target, or the mix read from its Battle Details screen.
   const enemy = useMemo(() => {
     if (!battle) return null;
@@ -363,9 +372,25 @@ export default function AnalyzerView() {
 
       {recon && <Dashboard report={recon} config={strategy} />}
       {battle && <BattleDashboard report={battle} />}
-      {battle && !recon && (
-        <RematchPanel battle={battle} enemy={enemy} config={strategy} />
+      {battle && savedBattle && leadSource !== "troops" && leadSource !== "you" && (
+        <section className="card flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-zinc-300">The troops you sent could not be read. What did you lead with?</span>
+          {(["bruisers", "hitmen", "bikers"] as const).map((t) => (
+            <button
+              key={t}
+              className="btn"
+              onClick={() => {
+                log("lead.set", { lead: t });
+                void setLedWith(savedBattle.id, t).then(() => useCommunity.getState().shareBattle(savedBattle.id));
+              }}
+            >
+              {TROOP_LABEL[t]}
+            </button>
+          ))}
+          <span className="text-xs text-zinc-500">Your answer is saved with the battle and used for the advice and your stats.</span>
+        </section>
       )}
+      {battle && !recon && <RematchPanel battle={battle} enemy={enemy} config={strategy} ledWith={savedBattle?.ledWith} />}
     </div>
   );
 }

@@ -81,7 +81,7 @@ export function buildPlaybook(
     const lossRatio = effectiveLossRatio(b);
     const win = b.result === "victory";
     const good = win && lossRatio <= lossCap;
-    const lead = leadTroop(b, cfg.formations);
+    const lead = leadTroop(b, cfg.formations, battle.ledWith);
     const theirs = b.defender.totalAssociates || recon.report.associates.total;
     const forceRatio = theirs ? b.attacker.totalAssociates / theirs : 0;
     const chartLead = rs.dominant ? cfg.counters[rs.dominant] : null;

@@ -99,3 +99,16 @@ describe("how many associates to bring (from your own wins)", () => {
     expect(a.lines.join(" ")).not.toMatch(/counter-matched win/);
   });
 });
+
+describe("what you say you led with beats a guess", () => {
+  it("is used for the advice when the troop rows could not be read", () => {
+    const b = battle("defeat", [], "Bruiser - Square");
+    const withoutAnswer = rematchAdvice(b, enemy({}), DEFAULT_STRATEGY).lines.join(" ");
+    expect(withoutAnswer).toMatch(/could not be read from Battle Details/);
+    const wrong = rematchAdvice(b, enemy({}), DEFAULT_STRATEGY, undefined, "bikers").lines.join(" ");
+    expect(wrong).toMatch(/You led with Bikers, but the counter to that is Bruisers/);
+    const right = rematchAdvice(b, enemy({}), DEFAULT_STRATEGY, undefined, "bruisers").lines.join(" ");
+    expect(right).toMatch(/Bruisers was the right lead/);
+    expect(right).toMatch(/came down to numbers/);
+  });
+});

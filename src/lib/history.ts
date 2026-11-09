@@ -24,6 +24,8 @@ export interface BattleRecord extends BaseRecord {
   report: BattleReport;
   /** Set by the user; the report itself does not say whether it was a rally. */
   attackType?: "solo" | "rally";
+  /** Set by the user when the troop rows could not be read: what the attack was led with. */
+  ledWith?: TroopType;
 }
 export type HistoryRecord = ReconRecord | BattleRecord;
 
@@ -69,13 +71,16 @@ export interface LeadInfo {
    * "troops": read from the troop rows of Battle Details (reliable). "formation": a guess from the formation name
    * (can be wrong: the same formation is used with different troops). "none": not known.
    */
-  source: "troops" | "formation" | "none";
+  source: "you" | "troops" | "formation" | "none";
 }
 
 export function leadInfo(
   b: BattleReport,
   formations: Record<TroopType, string> = DEFAULT_STRATEGY.formations,
+  /** What the user said they led with: it beats anything read or guessed. */
+  override?: TroopType,
 ): LeadInfo {
+  if (override) return { lead: override, source: "you" };
   const t = b.attacker.troops;
   if (t) {
     // Models sometimes copy the defender's column into ours. Only trust troops that add up to our army.
@@ -97,8 +102,12 @@ export function leadInfo(
 }
 
 /** The lead troop, from the best available evidence (see `leadInfo` for how reliable it is). */
-export function leadTroop(b: BattleReport, formations: Record<TroopType, string> = DEFAULT_STRATEGY.formations): TroopType | null {
-  return leadInfo(b, formations).lead;
+export function leadTroop(
+  b: BattleReport,
+  formations: Record<TroopType, string> = DEFAULT_STRATEGY.formations,
+  override?: TroopType,
+): TroopType | null {
+  return leadInfo(b, formations, override).lead;
 }
 
 /**
@@ -228,7 +237,7 @@ export function matchupStats(
     if (!p.recon) continue;
     const enemy = computeStrategy(p.recon.report).dominant;
     if (!enemy) continue;
-    const ours = leadTroop(p.battle.report, formations) ?? "unknown";
+    const ours = leadTroop(p.battle.report, formations, p.battle.ledWith) ?? "unknown";
     const key = `${enemy}|${ours}`;
     groups.set(key, [...(groups.get(key) ?? []), p]);
   }

@@ -90,6 +90,10 @@ describe("a lead that was not read is never counted", () => {
     const rows = { ...br, report: { ...battle, attacker: { ...battle.attacker, troops: { bruisers: 21, hitmen: 13, bikers: battle.attacker.totalAssociates - 34, mortars: 0 } } } };
     expect(buildSample(pairBattles([rr, rows])[0], "0.1.19")?.lead).toBe("bikers");
   });
+  it("is shared when the user said what they led with", () => {
+    const stated = { ...br, ledWith: "bikers" as const };
+    expect(buildSample(pairBattles([rr, stated])[0], "0.1.19")?.lead).toBe("bikers");
+  });
   it("is left out of the statistics, and still accepted by the inbox", async () => {
     const { aggregate } = await import("../../../scripts/community-aggregate.mjs");
     expect(validateSample(s).ok).toBe(true);

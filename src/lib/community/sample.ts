@@ -64,7 +64,7 @@ export function buildSample(
     enemyTotal: Math.min(enemyTotal, 20_000_000),
     formation,
     // Only a lead that was READ from the troop rows is shared. A guess from the formation name would pollute the stats.
-    lead: ((i) => (i.source === "troops" && i.lead !== "mortars" ? i.lead : null))(leadInfo(b, formations)),
+    lead: ((i) => ((i.source === "troops" || i.source === "you") && i.lead !== "mortars" ? i.lead : null))(leadInfo(b, formations, battle.ledWith)),
     ours: Math.min(ours, 20_000_000),
     ratio: Math.min(20, dp(b.attacker.totalAssociates / (recon.report.associates.total || total), 1)),
     ourLoss: Math.min(1, dp(effectiveLossRatio(b), 3)),

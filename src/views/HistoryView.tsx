@@ -54,7 +54,7 @@ function enemyMix(r: ReconRecord) {
 }
 
 export default function HistoryView() {
-  const { records, loaded, error, load, clear, setAttackType } = useHistory();
+  const { records, loaded, error, load, clear, setAttackType, setLedWith } = useHistory();
   const strategy = useSettings((s) => s.strategy);
   const [confirmClear, setConfirmClear] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -164,7 +164,7 @@ export default function HistoryView() {
 
       {pairs.map(({ battle, recon }) => {
         const b = battle.report;
-        const ours = leadTroop(b, strategy.formations);
+        const ours = leadTroop(b, strategy.formations, battle.ledWith);
         const advice = recon ? recommendedLead(recon.report, strategy) : null;
         const crewAtk = b.buffs.find((x) => /crew\s*atk/i.test(x.stat));
         return (
@@ -213,6 +213,19 @@ export default function HistoryView() {
                 <option value="">not set</option>
                 <option value="solo">solo attack</option>
                 <option value="rally">rally</option>
+              </select>
+            </label>
+            <label className="ml-3 inline-flex items-center gap-2 text-xs text-zinc-400">
+              I led with
+              <select
+                className="input w-auto"
+                value={battle.ledWith ?? ""}
+                onChange={(e) => void setLedWith(battle.id, (e.target.value || undefined) as TroopType | undefined)}
+              >
+                <option value="">not set</option>
+                <option value="bruisers">Bruisers</option>
+                <option value="hitmen">Hitmen</option>
+                <option value="bikers">Bikers</option>
               </select>
             </label>
             <Thumbs recs={[recon, battle]} />

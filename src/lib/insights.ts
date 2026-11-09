@@ -77,7 +77,7 @@ export function analyzeRules(pairs: Pair[], cfg: StrategyConfig): RuleAnalysis {
       skipped.mixedDefense++;
       continue;
     }
-    const ours = leadTroop(battle.report, cfg.formations);
+    const ours = leadTroop(battle.report, cfg.formations, battle.ledWith);
     if (!ours) {
       skipped.unknownFormation++;
       continue;

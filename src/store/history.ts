@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { fingerprint, type HistoryRecord } from "@/lib/history";
+import type { TroopType } from "@/lib/strategy";
 import { dbAll, dbClear, dbDelete, dbPut } from "@/lib/historyDb";
 
 interface HistoryState {
@@ -11,6 +12,8 @@ interface HistoryState {
   add: (r: HistoryRecord) => Promise<HistoryRecord>;
   remove: (id: string) => Promise<void>;
   setAttackType: (id: string, type: "solo" | "rally" | undefined) => Promise<void>;
+  /** What the user says they led with (when it could not be read). */
+  setLedWith: (id: string, lead: TroopType | undefined) => Promise<void>;
   clear: () => Promise<void>;
 }
 
@@ -35,7 +38,7 @@ export const useHistory = create<HistoryState>((set, get) => ({
     const fp = fingerprint(r);
     const same = fp ? get().records.find((o) => o.kind === r.kind && fingerprint(o) === fp) : undefined;
     if (same) {
-      const merged = { ...r, id: same.id, ...(same.kind === "battle" && r.kind === "battle" ? { attackType: same.attackType ?? r.attackType } : {}) } as HistoryRecord;
+      const merged = { ...r, id: same.id, ...(same.kind === "battle" && r.kind === "battle" ? { attackType: same.attackType ?? r.attackType, ledWith: same.ledWith ?? r.ledWith } : {}) } as HistoryRecord;
       await dbPut(merged);
       set({ records: get().records.map((o) => (o.id === same.id ? merged : o)) });
       return merged;
@@ -47,6 +50,13 @@ export const useHistory = create<HistoryState>((set, get) => ({
   remove: async (id) => {
     await dbDelete(id);
     set({ records: get().records.filter((r) => r.id !== id) });
+  },
+  setLedWith: async (id, lead) => {
+    const rec = get().records.find((r) => r.id === id);
+    if (!rec || rec.kind !== "battle") return;
+    const updated = { ...rec, ledWith: lead };
+    await dbPut(updated);
+    set({ records: get().records.map((r) => (r.id === id ? updated : r)) });
   },
   setAttackType: async (id, type) => {
     const rec = get().records.find((r) => r.id === id);

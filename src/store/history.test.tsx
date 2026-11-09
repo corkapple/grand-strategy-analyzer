@@ -67,3 +67,18 @@ describe("analysing the same screenshots again", () => {
     expect(useHistory.getState().records).toHaveLength(1);
   });
 });
+
+describe("what you say you led with", () => {
+  it("is saved with the battle, drives the lead, and survives analysing the same screenshots again", async () => {
+    const { useHistory } = await import("./history");
+    const { leadInfo } = await import("@/lib/history");
+    const first = await useHistory.getState().add(battle("a"));
+    expect(leadInfo((first as BattleRecord).report).source).not.toBe("you");
+    await useHistory.getState().setLedWith("a", "bruisers");
+    const again = (await useHistory.getState().add(battle("b"))) as BattleRecord;
+    expect(again.ledWith).toBe("bruisers");
+    expect(leadInfo(again.report, undefined, again.ledWith)).toEqual({ lead: "bruisers", source: "you" });
+    await useHistory.getState().setLedWith("a", undefined);
+    expect((useHistory.getState().records[0] as BattleRecord).ledWith).toBeUndefined();
+  });
+});
