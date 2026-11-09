@@ -64,6 +64,9 @@ interface SettingsState {
   /** Read screenshots on this computer first; ask an AI service only when the numbers cannot be verified. */
   localFirst: boolean;
   setLocalFirst: (v: boolean) => void;
+  /** Look for a newer version of the app and offer to install it. */
+  checkUpdates: boolean;
+  setCheckUpdates: (v: boolean) => void;
   setAutoFallback: (v: boolean) => void;
   setMeshGuides: (v: boolean) => void;
   setFallbackEnabled: (v: boolean) => void;
@@ -87,6 +90,7 @@ const initial = () => ({
   shareResults: true,
   shareNoticeSeen: false,
   autoFallback: true,
+  checkUpdates: true,
   localFirst: true,
   meshGuides: true,
   fallbackEnabled: true,
@@ -184,6 +188,7 @@ export const useSettings = create<SettingsState>()(
       secretsReady: false,
       secretsError: null,
       setLocalFirst: (localFirst) => set({ localFirst }),
+      setCheckUpdates: (checkUpdates) => set({ checkUpdates }),
       setAutoFallback: (autoFallback) => set({ autoFallback }),
       setMeshGuides: (meshGuides) => set({ meshGuides }),
       setShareResults: (shareResults) => set({ shareResults, shareNoticeSeen: true }),
@@ -246,6 +251,7 @@ export const useSettings = create<SettingsState>()(
         fallbackProvider: s.fallbackProvider,
         shareResults: s.shareResults,
         autoFallback: s.autoFallback,
+        checkUpdates: s.checkUpdates,
         localFirst: s.localFirst,
         meshGuides: s.meshGuides,
         shareNoticeSeen: s.shareNoticeSeen,

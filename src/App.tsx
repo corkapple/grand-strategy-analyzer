@@ -7,6 +7,7 @@ import { useCommunity } from "./store/community";
 import { useHistory } from "./store/history";
 import { useKnowledge } from "./store/knowledge";
 import { useSettings } from "./store/settings";
+import { startUpdateChecks, useUpdater } from "./store/updater";
 
 type View = "analyzer" | "history" | "knowledge" | "settings";
 
@@ -23,6 +24,9 @@ export default function App({ initialView = "analyzer" }: { initialView?: View }
       void useCommunity.getState().flush();
     })();
   }, []);
+
+  // Look for a newer version of the app itself (installed with one click, no download page).
+  useEffect(() => startUpdateChecks(), []);
 
   // Weekly knowledge refresh. Waits until API keys have finished loading from the keychain
   // (the first launch of a new build can show permission prompts that take a while to answer).
@@ -50,9 +54,34 @@ export default function App({ initialView = "analyzer" }: { initialView?: View }
 
   const s = useSettings();
   const showNotice = !s.shareNoticeSeen && s.shareResults;
+  const up = useUpdater();
+  const showUpdate = (up.status === "available" && up.dismissed !== up.version) || up.status === "downloading" || up.status === "installing";
 
   return (
     <div className="flex h-screen flex-col">
+      {showUpdate && (
+        <div className="flex flex-wrap items-center gap-3 border-b border-green-500/40 bg-green-500/10 px-4 py-2 text-sm">
+          {up.status === "available" ? (
+            <>
+              <span className="text-zinc-100">
+                <b>Version {up.version} is available.</b>
+                {up.notes ? ` ${up.notes.split("\n")[0].slice(0, 140)}` : ""}
+              </span>
+              <button className="btn btn-primary" onClick={() => void up.install()}>
+                Install and restart
+              </button>
+              <button className="btn" onClick={up.dismiss}>
+                Later
+              </button>
+            </>
+          ) : (
+            <span className="text-zinc-100">
+              {up.status === "installing" ? "Installing…" : `Downloading the update… ${up.progress != null ? `${Math.round(up.progress * 100)}%` : ""}`} The app
+              restarts when it is done.
+            </span>
+          )}
+        </div>
+      )}
       {showNotice && (
         <div className="flex flex-wrap items-center gap-3 border-b border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm">
           <span className="text-zinc-200">

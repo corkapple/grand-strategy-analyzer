@@ -47,7 +47,8 @@ jobs:
       - name: Build app
         env:
           VITE_COMMUNITY_URL: ${{ vars.COMMUNITY_URL }}
-        run: npx tauri build --target x86_64-pc-windows-msvc
+        # Updater packages are signed on the maintainer's Mac (scripts/publish-update.mjs); the signing key is never given to GitHub.
+        run: npx tauri build --target x86_64-pc-windows-msvc --config '{"bundle":{"createUpdaterArtifacts":false}}'
       - name: Attach to the release
         shell: bash
         env:
@@ -86,7 +87,7 @@ jobs:
       - name: Build app
         env:
           VITE_COMMUNITY_URL: ${{ vars.COMMUNITY_URL }}
-        run: npx tauri build --target ${{ matrix.target }}
+        run: npx tauri build --target ${{ matrix.target }} --config '{"bundle":{"createUpdaterArtifacts":false}}'
       - name: Attach to the release
         env:
           GH_TOKEN: ${{ github.token }}

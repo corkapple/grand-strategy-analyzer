@@ -21,6 +21,11 @@ xattr -dr com.apple.quarantine "/Applications/Grand Strategy Analyzer.app"
 Add more free providers in **Settings** (see [Get a free key](FREE-KEY.md#more-free-options-extra-backups)). The app tries each
 one you added a key for. As a last resort use **Finish in a web chat instead**.
 
+## "Could not reach the update server" or the update won't install
+
+Check your internet connection and try **Settings → Check for updates** again. If the message says the update's signature did
+not match, nothing was installed; wait a little and try again, or install the newest version from the Releases page.
+
 ## The Mac keeps asking for my password (Keychain)
 
 It is asking permission to read your saved key. Click **Always Allow**. You may see it again after an update.

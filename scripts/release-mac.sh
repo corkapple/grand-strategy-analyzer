@@ -6,6 +6,14 @@ cd "$(dirname "$0")/.."
 
 VERSION="$(node -p "require('./package.json').version")"
 TAG="v$VERSION"
+# Updates are signed with a key that lives only on this Mac (see docs/DEVELOPER.md). Without it no update is published.
+KEY="${GSA_UPDATER_KEY:-$HOME/.tauri/gsa-updater.key}"
+if [[ -f "$KEY" ]]; then
+  export TAURI_SIGNING_PRIVATE_KEY="$(cat "$KEY")"
+  export TAURI_SIGNING_PRIVATE_KEY_PASSWORD="${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}"
+else
+  echo "WARNING: no update signing key at $KEY: the build will fail, and apps cannot be updated in place." >&2
+fi
 export VITE_COMMUNITY_URL="${VITE_COMMUNITY_URL:-$(gh variable get COMMUNITY_URL 2>/dev/null || true)}"
 
 echo "Building Apple Silicon app for $TAG ..."
@@ -24,4 +32,9 @@ git rev-parse "$TAG" >/dev/null 2>&1 || git tag "$TAG"
 git push -q origin "$TAG" 2>/dev/null || true
 gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "Grand Strategy Analyzer $TAG" --generate-notes
 gh release upload "$TAG" "${FILES[@]}" --clobber
+
+# Publish the in-app update (signed packages + manifest) to the public update server.
+FLAGS=(--arm)
+[[ "${1:-}" == "--intel" ]] && FLAGS+=(--intel)
+node scripts/publish-update.mjs "${FLAGS[@]}"
 echo "Done: $(gh release view "$TAG" --json url --jq .url)"

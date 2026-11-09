@@ -182,3 +182,23 @@ The images in `docs/images/` are 800 px wide captures of those pages.
   (`screenshotChain` in `analyze.ts`).
 - Battle Details is not parsed on-device (its troop rows are icons). With a verified mail and a Battle Details screen but no recon, the on-device reader refuses so an AI reads the troops; `syntheticRecon` in `history.ts` then turns the defender troops into the enemy mix.
 - Tests use real reader output with coordinates and names replaced (`src/lib/ocr/fixtures.ts`).
+
+
+## In-app updates
+
+Installed apps check `https://<update server>/updates/latest.json` (the public Netlify site, since the repository is private)
+and install the signed package it points to. The Tauri updater plugin refuses anything whose signature does not match the
+public key in `src-tauri/tauri.conf.json`, or whose embedded version differs from the manifest's.
+
+- **Signing key:** generated once with `npx tauri signer generate -w ~/.tauri/gsa-updater.key`. The private key lives only on the
+  maintainer's Mac (never in the repository or in GitHub secrets: whoever holds it can ship code to every install).
+  **Back it up** (for example in a password manager). If it is lost, installed apps cannot be updated again and everyone must
+  reinstall by hand with a new key.
+- **Releasing a Mac version:** bump the version in `package.json`, `src-tauri/tauri.conf.json` and `src-tauri/Cargo.toml`, commit, run
+  `npm run release:mac -- --intel`. It builds signed packages, attaches the DMGs to the GitHub release and runs
+  `scripts/publish-update.mjs`, which publishes `latest.json` and the packages to the update server.
+- **Windows:** run the "Build desktop apps" workflow (it builds the installer **unsigned for updates**), then
+  `node scripts/publish-update.mjs --arm --intel --windows`, which downloads the installer, signs it on this Mac and republishes
+  the manifest. Until then Windows users are not offered that version.
+- **Test hook:** `GSA_UPDATE_TEST_ENDPOINT=<https url of a manifest>` makes a copy of the app check that manifest, install the
+  update and restart (log in `$TMPDIR/gsa-update-test.log`). Run it from a normal folder, not `/tmp` (a symlink the updater rejects).

@@ -33,7 +33,12 @@ You only do this the first time. After that, open it like any other app.
 
 ## Updating
 
-Download the newest installer from the Releases page and install it over the old one. Your history and settings are kept.
+Versions from **0.1.16** update themselves. When a new version is ready, a green bar appears at the top of the app:
+**"Version X is available. Install and restart."** Click it. The app downloads the update, checks that it is genuine, installs it
+and restarts, and your history and settings are kept. You can also check by hand in **Settings → Check for updates**, or
+turn the automatic check off there. Updates need no new warnings, because the app installs them itself.
+
+If you have an older version, install the newest one from the Releases page once. It updates itself from then on.
 
 ## Next step
 

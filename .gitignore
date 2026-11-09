@@ -15,3 +15,5 @@ data/samples/*.tmp
 .env.local
 .netlify
 public/ocr
+site/updates
+site/updates-test

@@ -314,12 +314,62 @@ fn bridge_start(app: AppHandle, state: State<Bridge>) -> Result<(), String> {
     start_bridge(&app, &state)
 }
 
+/// Test hook (only active when GSA_UPDATE_TEST_ENDPOINT is set): checks that URL for an update, downloads it,
+/// verifies its signature, installs it and restarts, writing progress to a log file. It lets the whole update
+/// path be verified on a copy of the app without clicking through the UI.
+#[cfg(desktop)]
+fn update_selftest(app: &AppHandle) {
+    let Ok(endpoint) = std::env::var("GSA_UPDATE_TEST_ENDPOINT") else { return };
+    let handle = app.clone();
+    tauri::async_runtime::spawn(async move {
+        use tauri_plugin_updater::UpdaterExt;
+        let log_path = std::env::temp_dir().join("gsa-update-test.log");
+        // After the restart the same test would run again: stop once the update has been installed.
+        if std::fs::read_to_string(&log_path).is_ok_and(|t| t.contains("installed")) {
+            let _ = std::fs::write(&log_path, "restarted after install: ok");
+            return;
+        }
+        let log = |m: &str| {
+            let _ = std::fs::write(&log_path, m);
+        };
+        let updater = match endpoint
+            .parse::<tauri::Url>()
+            .map_err(|e| e.to_string())
+            .and_then(|u| handle.updater_builder().endpoints(vec![u]).map_err(|e| e.to_string()))
+            .and_then(|b| b.build().map_err(|e| e.to_string()))
+        {
+            Ok(u) => u,
+            Err(e) => return log(&format!("setup failed: {e}")),
+        };
+        match updater.check().await {
+            Ok(Some(update)) => {
+                log(&format!("found {} (running {})", update.version, update.current_version));
+                match update.download_and_install(|_, _| {}, || {}).await {
+                    Ok(_) => {
+                        log("installed; restarting");
+                        handle.restart();
+                    }
+                    Err(e) => log(&format!("install failed: {e}")),
+                }
+            }
+            Ok(None) => log("no update"),
+            Err(e) => log(&format!("check failed: {e}")),
+        }
+    });
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         // Rust-side HTTP client: bypasses WebView CORS for provider REST APIs.
         .plugin(tauri_plugin_http::init())
-        .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_clipboard_manager::init());
+    // In-app updates: signed packages from the update server, installed and restarted by the app itself.
+    #[cfg(desktop)]
+    let builder = builder
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init());
+    builder
         .manage(Bridge::default())
         .invoke_handler(tauri::generate_handler![secret_set, secret_get, bridge_start, open_chat, ocr_native])
         .setup(|app| {
@@ -330,6 +380,8 @@ pub fn run() {
                     eprintln!("bridge autostart failed: {e}");
                 }
             }
+            #[cfg(desktop)]
+            update_selftest(app.handle());
             Ok(())
         })
         .build(tauri::generate_context!())

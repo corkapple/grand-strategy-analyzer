@@ -6,6 +6,7 @@ import { SYSTEM_PROMPT } from "@/lib/prompt";
 import { DEFAULT_STRATEGY } from "@/lib/strategy";
 import { COMMUNITY_URL } from "@/lib/community/config";
 import { useCommunity } from "@/store/community";
+import { CURRENT_VERSION, useUpdater } from "@/store/updater";
 import { useSettings } from "@/store/settings";
 
 const GROUP_LABEL = {
@@ -220,6 +221,8 @@ export default function SettingsView() {
         </p>
       </section>
 
+      <UpdateSettings />
+
       <CommunitySettings />
 
       <section className="card">
@@ -334,6 +337,39 @@ function CommunitySettings() {
           {last ? JSON.stringify(last, null, 2) : "Nothing has been sent yet."}
         </pre>
       )}
+    </section>
+  );
+}
+
+function UpdateSettings() {
+  const s = useSettings();
+  const up = useUpdater();
+  return (
+    <section className="card space-y-2">
+      <div className="flex flex-wrap items-center gap-3 text-sm">
+        <span className="font-medium">App updates</span>
+        <span className="text-zinc-400">You have version {CURRENT_VERSION}.</span>
+        <button className="btn" disabled={up.status === "checking" || up.status === "downloading"} onClick={() => void up.check(true)}>
+          {up.status === "checking" ? "Checking…" : "Check for updates"}
+        </button>
+        {up.status === "uptodate" && <span className="text-green-400">You have the latest version.</span>}
+        {up.status === "available" && (
+          <>
+            <span className="text-amber-400">Version {up.version} is available.</span>
+            <button className="btn btn-primary" onClick={() => void up.install()}>
+              Install and restart
+            </button>
+          </>
+        )}
+        {up.status === "error" && <span className="text-red-400">{up.error}</span>}
+      </div>
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" checked={s.checkUpdates} onChange={(e) => s.setCheckUpdates(e.target.checked)} />
+        Look for updates automatically
+      </label>
+      <p className="text-xs text-zinc-500">
+        Updates are signed. The app checks the signature with a key built into it and installs nothing that doesn't match.
+      </p>
     </section>
   );
 }
