@@ -3,6 +3,7 @@ import { browserBridge } from "./browserBridge";
 import { clipboardFallback } from "./clipboard";
 import { gemini } from "./gemini";
 import { deepseek, githubModels, groq, lmstudio, mesh, mistral, openai, openrouter } from "./openaiCompatible";
+import { localReader } from "./localReader";
 import { ollama } from "./ollama";
 import type { LLMProvider, ProviderConfig, ProviderId } from "./types";
 
@@ -18,6 +19,7 @@ export const PROVIDER_LIST: LLMProvider[] = [
   anthropic,
   ollama,
   lmstudio,
+  localReader,
   browserBridge,
   clipboardFallback,
 ];

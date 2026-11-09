@@ -5,6 +5,7 @@ use std::fs::File;
 use std::net::{SocketAddr, TcpStream};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::time::Duration;
 use tauri::{AppHandle, Manager, RunEvent, State};
@@ -129,7 +130,156 @@ fn start_bridge(app: &AppHandle, state: &Bridge) -> Result<(), String> {
     Ok(())
 }
 
-/// Starts the bridge if it is not already listening. The frontend then polls /health.
+// ---------------------------------------------------------------------------
+// On-device text reading: macOS Vision (bundled helper) or Windows' built-in OCR.
+// The image never leaves the computer. The frontend falls back to a WASM reader if this fails.
+// ---------------------------------------------------------------------------
+
+static OCR_SEQ: AtomicU64 = AtomicU64::new(0);
+
+/// A bundled helper binary sits next to the app executable.
+#[cfg(target_os = "macos")]
+fn find_sidecar(name: &str) -> Option<PathBuf> {
+    let exe = std::env::current_exe().ok()?;
+    let dir = exe.parent()?;
+    let p = dir.join(name);
+    if p.exists() {
+        return Some(p);
+    }
+    // `tauri dev`: the staged copy, named with the target triple.
+    let bins = Path::new(env!("CARGO_MANIFEST_DIR")).join("binaries");
+    std::fs::read_dir(bins)
+        .ok()?
+        .flatten()
+        .map(|e| e.path())
+        .find(|p| p.file_name().and_then(|n| n.to_str()).is_some_and(|n| n.starts_with(name)))
+}
+
+#[cfg(target_os = "macos")]
+fn native_ocr(bytes: &[u8], scale: f64) -> Result<String, String> {
+    let exe = find_sidecar("gsa-ocr").ok_or("the on-device reader is not in this build")?;
+    let tmp = std::env::temp_dir().join(format!(
+        "gsa-ocr-{}-{}.img",
+        std::process::id(),
+        OCR_SEQ.fetch_add(1, Ordering::Relaxed)
+    ));
+    std::fs::write(&tmp, bytes).map_err(|e| e.to_string())?;
+    let out = Command::new(exe).arg(&tmp).arg(scale.to_string()).output();
+    let _ = std::fs::remove_file(&tmp);
+    let out = out.map_err(|e| e.to_string())?;
+    if !out.status.success() {
+        return Err(String::from_utf8_lossy(&out.stderr).trim().to_string());
+    }
+    Ok(String::from_utf8_lossy(&out.stdout).into_owned())
+}
+
+#[cfg(windows)]
+fn native_ocr(bytes: &[u8], scale: f64) -> Result<String, String> {
+    let _ = &OCR_SEQ;
+    win_ocr::recognize(bytes, scale).map_err(|e| e.to_string())
+}
+
+#[cfg(not(any(target_os = "macos", windows)))]
+fn native_ocr(_bytes: &[u8], _scale: f64) -> Result<String, String> {
+    let _ = &OCR_SEQ;
+    Err("no on-device reader on this system".into())
+}
+
+#[cfg(windows)]
+mod win_ocr {
+    use windows::core::Result;
+    use windows::Graphics::Imaging::{
+        BitmapAlphaMode, BitmapDecoder, BitmapInterpolationMode, BitmapPixelFormat, BitmapTransform,
+        ColorManagementMode, ExifOrientationMode,
+    };
+    use windows::Media::Ocr::OcrEngine;
+    use windows::Storage::Streams::{DataWriter, InMemoryRandomAccessStream};
+
+    /// Reads the text of an image with Windows' own OCR, one line of text per row, cells joined by " | ".
+    pub fn recognize(bytes: &[u8], scale: f64) -> Result<String> {
+        unsafe {
+            // Threads that Tauri hands us are not initialised for WinRT yet; failure here is harmless.
+            let _ = windows::Win32::System::WinRT::RoInitialize(windows::Win32::System::WinRT::RO_INIT_MULTITHREADED);
+        }
+        let stream = InMemoryRandomAccessStream::new()?;
+        let writer = DataWriter::CreateDataWriter(&stream)?;
+        writer.WriteBytes(bytes)?;
+        writer.StoreAsync()?.get()?;
+        writer.FlushAsync()?.get()?;
+        stream.Seek(0)?;
+
+        let decoder = BitmapDecoder::CreateAsync(&stream)?.get()?;
+        let max = OcrEngine::MaxImageDimension()? as f64;
+        let w = decoder.PixelWidth()? as f64;
+        let h = decoder.PixelHeight()? as f64;
+        let factor = scale.min(max / w.max(h)).max(0.1);
+        let transform = BitmapTransform::new()?;
+        transform.SetScaledWidth((w * factor) as u32)?;
+        transform.SetScaledHeight((h * factor) as u32)?;
+        transform.SetInterpolationMode(BitmapInterpolationMode::Fant)?;
+        let bitmap = decoder
+            .GetSoftwareBitmapTransformedAsync(
+                BitmapPixelFormat::Bgra8,
+                BitmapAlphaMode::Premultiplied,
+                &transform,
+                ExifOrientationMode::IgnoreExifOrientation,
+                ColorManagementMode::DoNotColorManage,
+            )?
+            .get()?;
+
+        let engine = OcrEngine::TryCreateFromUserProfileLanguages()?;
+        let result = engine.RecognizeAsync(&bitmap)?.get()?;
+
+        // (vertical centre, left edge, height, text) per recognised line
+        let mut lines: Vec<(f64, f64, f64, String)> = Vec::new();
+        for line in result.Lines()? {
+            let mut text = String::new();
+            let mut rect = None;
+            for word in line.Words()? {
+                if rect.is_none() {
+                    rect = Some(word.BoundingRect()?);
+                }
+                if !text.is_empty() {
+                    text.push(' ');
+                }
+                text.push_str(&word.Text()?.to_string());
+            }
+            if let Some(r) = rect {
+                lines.push(((r.Y + r.Height / 2.0) as f64, r.X as f64, r.Height as f64, text));
+            }
+        }
+        lines.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
+        let mut rows: Vec<Vec<(f64, String)>> = Vec::new();
+        let mut last_y = f64::NEG_INFINITY;
+        for (y, x, hh, text) in lines {
+            if rows.is_empty() || (y - last_y).abs() > hh * 0.6 {
+                rows.push(Vec::new());
+            }
+            rows.last_mut().unwrap().push((x, text));
+            last_y = y;
+        }
+        let mut out = String::new();
+        for mut row in rows {
+            row.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
+            out.push_str(&row.into_iter().map(|c| c.1).collect::<Vec<_>>().join("  |  "));
+            out.push('\n');
+        }
+        Ok(out)
+    }
+}
+
+/// Reads the text of an image on this computer. `scale` lets the caller take an independent second reading.
+#[tauri::command]
+async fn ocr_native(image_base64: String, scale: Option<f64>) -> Result<String, String> {
+    use base64::Engine;
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(image_base64.trim())
+        .map_err(|e| e.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || native_ocr(&bytes, scale.unwrap_or(1.0)))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
 /// Opens one of a fixed list of chat sites in the user's default browser. Only these URLs are
 /// accepted, so the webview can never ask the app to open (or run) anything else.
 #[tauri::command]
@@ -155,6 +305,7 @@ fn open_chat(site: String) -> Result<(), String> {
     cmd.arg(url).spawn().map(|_| ()).map_err(|e| e.to_string())
 }
 
+/// Starts the bridge if it is not already listening. The frontend then polls /health.
 #[tauri::command]
 fn bridge_start(app: AppHandle, state: State<Bridge>) -> Result<(), String> {
     start_bridge(&app, &state)
@@ -167,7 +318,7 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .manage(Bridge::default())
-        .invoke_handler(tauri::generate_handler![secret_set, secret_get, bridge_start, open_chat])
+        .invoke_handler(tauri::generate_handler![secret_set, secret_get, bridge_start, open_chat, ocr_native])
         .setup(|app| {
             // Test hook: lets the packaged app be verified without clicking through the UI.
             if std::env::var_os("GSA_BRIDGE_AUTOSTART").is_some() {

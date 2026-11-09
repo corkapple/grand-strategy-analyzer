@@ -11,6 +11,7 @@ export type ProviderId =
   | "github"
   | "mistral"
   | "mesh"
+  | "local"
   | "deepseek"
   | "openai"
   | "anthropic"
@@ -64,6 +65,8 @@ export interface ProviderCapabilities {
   local: boolean;
   /** Cannot read images; only used for text jobs such as reading guides. */
   textOnly?: boolean;
+  /** Only reads screenshots (no text-only jobs such as reading guides). */
+  imageOnly?: boolean;
   /** Needs a human step (clipboard mode). */
   manual?: boolean;
   /** Shown in the settings drawer under the provider. */

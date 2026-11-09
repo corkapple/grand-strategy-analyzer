@@ -61,6 +61,9 @@ interface SettingsState {
   autoFallback: boolean;
   /** Use the public Mesh network (text only, no key) for reading guides. */
   meshGuides: boolean;
+  /** Read screenshots on this computer first; ask an AI service only when the numbers cannot be verified. */
+  localFirst: boolean;
+  setLocalFirst: (v: boolean) => void;
   setAutoFallback: (v: boolean) => void;
   setMeshGuides: (v: boolean) => void;
   setFallbackEnabled: (v: boolean) => void;
@@ -84,6 +87,7 @@ const initial = () => ({
   shareResults: true,
   shareNoticeSeen: false,
   autoFallback: true,
+  localFirst: true,
   meshGuides: true,
   fallbackEnabled: true,
   fallbackProvider: "openrouter" as ProviderId,
@@ -174,6 +178,7 @@ export const useSettings = create<SettingsState>()(
       keychain: false,
       secretsReady: false,
       secretsError: null,
+      setLocalFirst: (localFirst) => set({ localFirst }),
       setAutoFallback: (autoFallback) => set({ autoFallback }),
       setMeshGuides: (meshGuides) => set({ meshGuides }),
       setShareResults: (shareResults) => set({ shareResults, shareNoticeSeen: true }),
@@ -236,6 +241,7 @@ export const useSettings = create<SettingsState>()(
         fallbackProvider: s.fallbackProvider,
         shareResults: s.shareResults,
         autoFallback: s.autoFallback,
+        localFirst: s.localFirst,
         meshGuides: s.meshGuides,
         shareNoticeSeen: s.shareNoticeSeen,
         myAssociates: s.myAssociates,

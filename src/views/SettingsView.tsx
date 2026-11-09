@@ -172,6 +172,15 @@ export default function SettingsView() {
 
       <section className="card space-y-2">
         <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={s.localFirst} onChange={(e) => s.setLocalFirst(e.target.checked)} />
+          Read screenshots on this computer first, and use an AI service only when the numbers can't be verified
+        </label>
+        <p className="text-xs text-zinc-500">
+          Private and instant, with no key or quota used. The app reads each screenshot twice and checks every number
+          against the game's own totals; if anything doesn't match, it asks your AI service as before. It is also the last
+          resort when every online service is unavailable (marked as unverified).
+        </p>
+        <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
             checked={s.fallbackEnabled}

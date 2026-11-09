@@ -22,7 +22,7 @@ what to send, and learns from every fight you win.
 ## What it does
 
 1. **You drop in screenshots** of a recon report and, after the attack, the victory or defeat mail.
-2. **The app reads the numbers for you.** No typing. It uses an AI model to read the screenshots.
+2. **The app reads the numbers for you.** No typing. It first reads the screenshots **on your own computer**, and double-checks every number against the game's own totals. Only if something doesn't add up does it ask an AI service.
 3. **It tells you what to send:** the troop mix, the formation, and whether to attack solo or call a rally.
 4. **It learns from your results.** Every battle you save makes the next suggestion better, and it shows
    what worked for you before against similar defenses.
@@ -44,6 +44,7 @@ what to send, and learns from every fight you win.
 
 | | |
 |---|---|
+| **Reads on your computer** | Screenshots are read by your own computer first, with no AI, no key and no internet. Every number is read twice and checked against the game's totals, so a misread digit is caught instead of trusted. |
 | **Counter advice** | Bikers beat Bruisers, Bruisers beat Hitmen, Hitmen beat Bikers, and all three beat Mortar Cars. If the enemy is mostly one type, the app tells you to counter it fully (100%). |
 | **Right formation** | One of the six real in-game formations, picked for the troop type you are sending. |
 | **Solo or rally** | Based on the target's traps, army and wall. |
@@ -64,8 +65,8 @@ That's it. The [full guide](docs/USING-THE-APP.md) explains every screen in plai
 
 ## Your data and privacy
 
-- Your screenshots go **only** to the AI service you choose (Google Gemini or OpenRouter) to be read. They are never
-  sent to us.
+- Your screenshots are read **on your own computer** first. They go to an AI service you chose (such as Google Gemini or
+  OpenRouter) only when the on-device reading can't be verified, and never to us.
 - Your history, playbook and keys stay **on your computer**. Keys are kept in your computer's secure keychain.
 - The app shares **anonymous numbers only** (enemy troop mix, army sizes, result, losses) to improve the advice for
   everyone. **Never** screenshots, names, coordinates or keys. You can switch it off in Settings, and you can see

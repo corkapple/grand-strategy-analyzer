@@ -134,7 +134,7 @@ export default function AnalyzerView() {
     const shots = images; // snapshot: the user may remove screenshots while we wait
     const chain = fallbackCandidates(settings);
     const ask = (id: typeof activeProvider, config: (typeof providers)[typeof activeProvider], fallbacks: typeof chain) =>
-      runVision({ providerId: id, config, fallbacks, images: shots, customPrompt, signal: abort.current!.signal });
+      runVision({ providerId: id, config, fallbacks, localFirst: settings.localFirst, images: shots, customPrompt, signal: abort.current!.signal });
     setBusy(true);
     setAnsweredBy(null);
     setFallbackNote(null);

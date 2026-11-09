@@ -159,3 +159,23 @@ npx vite preview --outDir /tmp/gsa-docs --port 4173
 ```
 
 The images in `docs/images/` are 800 px wide captures of those pages.
+
+
+## On-device screenshot reader
+
+`src/lib/ocr/` reads screenshots without an AI model.
+
+- **Engines** (`engine.ts`): macOS Apple Vision through a small bundled helper (`native/macos-ocr/ocr.swift`, compiled by
+  `scripts/prepare-bundle.mjs` into `src-tauri/binaries/gsa-ocr-<triple>`; needs `swiftc`, present on macOS CI runners);
+  Windows' built-in OCR through the Rust `ocr_native` command (`win_ocr` in `src-tauri/src/lib.rs`); and a bundled
+  Tesseract.js WASM reader in `public/ocr` (copied from `node_modules` by `prepare-bundle`) as the backup.
+  **The Windows reader compiles against the real Windows API but has not been run on a Windows machine.**
+- **Parser** (`parse.ts`): rule-based, by label, for the recon report, the battle mail (Crew Details) and the Buff
+  Comparison. It repairs a single lost value with the game's identities (troops sum to Defensive Associates;
+  alive = total - wounded - dead; losses = wounded + dead + casualties reduced).
+- **Trust** (`read.ts`): every screenshot is read twice at two sizes. The values the app relies on must agree between the
+  readings and pass the identities, or the result is "unverified" and the next provider runs.
+- **Provider** (`providers/localReader.ts`, id `local`): first in the chain in strict mode, last in best-effort mode
+  (`screenshotChain` in `analyze.ts`).
+- Battle Details is not parsed (its troop rows are icons), so the lead troop comes from the formation.
+- Tests use real reader output with coordinates and names replaced (`src/lib/ocr/fixtures.ts`).

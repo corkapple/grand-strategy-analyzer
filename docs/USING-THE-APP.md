@@ -51,6 +51,19 @@ The app saves the result and pairs it with the recon of the same target. It then
 > **Tip:** take recon and battle screenshots of the **same target close together**. The app matches them by the
 > target's coordinates and the time.
 
+## How the app reads your screenshots
+
+1. **On your computer, first.** The app reads the text in each screenshot itself (your Mac's or Windows PC's built-in text
+   reader). It reads every screenshot twice and checks the numbers against the game's own totals: a recon's troops
+   must add up to "Defensive Associates", and a battle's numbers must add up too.
+2. **If everything matches,** you get the result straight away. The result says **"on-device reader (verified)"**. No AI
+   service is used, and nothing leaves your computer.
+3. **If a number doesn't match,** the app asks your AI service (Gemini and so on), exactly as before.
+4. **If every AI service is unavailable,** the app still gives you its best reading, marked **"unverified"**. Check those
+   numbers against your screenshot before relying on them.
+
+You can turn the first step off in **Settings → "Read screenshots on this computer first…"**.
+
 ## 2. History tab
 
 ![The History tab](images/history.png)
@@ -81,6 +94,7 @@ about once a week, or when you click **Check now**.
 ![The Settings tab](images/settings.png)
 
 - **Provider** and **API key**: see [Get a free key](FREE-KEY.md).
+- **Read screenshots on this computer first:** on by default. See "How the app reads your screenshots" above.
 - **Second provider:** the automatic backup.
 - **Share anonymous results:** on by default. See [Privacy](PRIVACY.md).
 - **Save analyses to History:** on by default.

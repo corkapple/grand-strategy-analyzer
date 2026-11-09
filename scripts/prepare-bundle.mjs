@@ -1,6 +1,8 @@
 // Stages everything the packaged app needs for the browser bridge:
 //  1. src-tauri/binaries/node-<target-triple>[.exe]  (Tauri sidecar: a Node runtime)
 //  2. src-tauri/resources/bridge/                    (server.mjs, sites.mjs, playwright-core)
+//  3. public/ocr/                                    (bundled WASM text reader, used when no native reader works)
+//  4. src-tauri/binaries/gsa-ocr-<target-triple>     (macOS only: Vision-based text reader, built from native/macos-ocr)
 // Runs automatically before `tauri dev` / `tauri build`.
 // The Node binary is a copy of the Node that runs this script (CI uses setup-node), so the
 // build machine's Node must match the target OS/arch. On macOS a universal Node is thinned
@@ -61,3 +63,32 @@ fs.cpSync(
   { recursive: true, dereference: true },
 );
 console.log(`bridge staged: ${path.relative(root, stage)}`);
+
+// --- 3. WASM text reader assets (fallback reader; works offline) -------------
+const ocrDir = path.join(root, "public", "ocr");
+fs.rmSync(ocrDir, { recursive: true, force: true });
+fs.mkdirSync(ocrDir, { recursive: true });
+const nm = path.join(root, "node_modules");
+fs.copyFileSync(path.join(nm, "tesseract.js", "dist", "worker.min.js"), path.join(ocrDir, "worker.min.js"));
+for (const f of ["tesseract-core-lstm.wasm.js", "tesseract-core-simd-lstm.wasm.js", "tesseract-core-relaxedsimd-lstm.wasm.js"]) {
+  fs.copyFileSync(path.join(nm, "tesseract.js-core", f), path.join(ocrDir, f));
+}
+fs.copyFileSync(
+  path.join(nm, "@tesseract.js-data", "eng", "4.0.0_best_int", "eng.traineddata.gz"),
+  path.join(ocrDir, "eng.traineddata.gz"),
+);
+console.log(`ocr assets: ${path.relative(root, ocrDir)}`);
+
+// --- 4. macOS native text reader (Apple Vision) -----------------------------
+if (isMac) {
+  const out = path.join(binDir, `gsa-ocr-${triple}`);
+  fs.rmSync(out, { force: true });
+  const arch = triple.startsWith("aarch64") ? "arm64" : "x86_64";
+  execFileSync(
+    "swiftc",
+    ["-O", "-target", `${arch}-apple-macos11.0`, path.join(root, "native", "macos-ocr", "ocr.swift"), "-o", out],
+    { stdio: "inherit" },
+  );
+  fs.chmodSync(out, 0o755);
+  console.log(`macOS reader: ${path.relative(root, out)}`);
+}

@@ -25,6 +25,18 @@ one you added a key for. As a last resort use **Finish in a web chat instead**.
 
 It is asking permission to read your saved key. Click **Always Allow**. You may see it again after an update.
 
+## The result says "on-device reader (unverified)"
+
+Every AI service was unavailable, so the app gave you its own best reading of the screenshot. It could not confirm the
+numbers against the game's totals. Compare the key numbers with your screenshot, or try again later when an AI service
+is available.
+
+## The app used the AI even though I want everything on my computer
+
+The on-device reader only answers when every number checks out. A blurry or cropped screenshot, or a screen the app
+doesn't know, makes it hand over to the AI service. Clear, uncropped screenshots work best. To never use an AI service,
+remove your keys in Settings. The app then gives you the on-device reading, marked unverified when it isn't certain.
+
 ## "Rate limit" or "free quota reached" (error 429)
 
 The free service has run out of requests for now. Gemini's free plan resets every day.

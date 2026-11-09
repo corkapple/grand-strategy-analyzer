@@ -14,3 +14,4 @@ data/samples/*.tmp
 .env
 .env.local
 .netlify
+public/ocr

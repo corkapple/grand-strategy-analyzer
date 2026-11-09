@@ -51,15 +51,35 @@ export interface AnalyzeOptions {
   images: ImageInput[];
   /** Tried in order if the main provider fails with a retryable error. */
   fallbacks?: Candidate[];
+  /** Read on this computer first and only ask an AI service when the numbers cannot be verified. */
+  localFirst?: boolean;
   kind?: ReportKind | "auto";
   customPrompt?: string;
   signal?: AbortSignal;
 }
 
+/**
+ * The order screenshots are tried in: the on-device reader first (it only answers when every number is
+ * verified), then your provider and its fallbacks, then the on-device reader again as a last resort so a
+ * total outage still gives a best-effort reading (marked unverified).
+ */
+export function screenshotChain(opts: Pick<AnalyzeOptions, "providerId" | "config" | "fallbacks" | "localFirst">): Candidate[] {
+  const local = (strict: boolean): Candidate => ({ id: "local", config: { extra: { strict: strict ? "1" : "0" } } });
+  const mainIsLocal = opts.providerId === "local";
+  return [
+    ...(opts.localFirst && !mainIsLocal ? [local(true)] : []),
+    mainIsLocal
+      ? { id: "local", config: { ...opts.config, extra: { ...opts.config.extra, strict: "0" } } }
+      : { id: opts.providerId, config: opts.config },
+    ...(opts.fallbacks ?? []),
+    ...(mainIsLocal ? [] : [local(false)]),
+  ];
+}
+
 /** Single entry point the UI calls. Provider-agnostic. */
 export function runVision(opts: AnalyzeOptions): Promise<VisionResponse> {
   return analyzeWithFallback(
-    [{ id: opts.providerId, config: opts.config }, ...(opts.fallbacks ?? [])],
+    screenshotChain(opts),
     {
       images: opts.images,
       systemPrompt: systemPromptFor(opts.kind ?? "auto"),

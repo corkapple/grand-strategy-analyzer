@@ -65,6 +65,7 @@ export async function analyzeWithFallback(chain: Candidate[], req: VisionRequest
   for (const c of chain) {
     // A text-only provider cannot read screenshots; skip it quietly for those requests.
     if (req.images.length && getProvider(c.id).capabilities.textOnly) continue;
+    if (!req.images.length && getProvider(c.id).capabilities.imageOnly) continue;
     const why = unusable(c);
     if (why) {
       skipped.push(`${getProvider(c.id).label}: ${why}`);
@@ -73,7 +74,12 @@ export async function analyzeWithFallback(chain: Candidate[], req: VisionRequest
     try {
       const res = await getProvider(c.id).analyze(req, c.config);
       return skipped.length || c !== chain[0]
-        ? { ...res, note: `${skipped.join("; ")}${skipped.length ? "; " : ""}answered by ${getProvider(c.id).label}` }
+        ? {
+            ...res,
+            note: [`${skipped.join("; ")}${skipped.length ? "; " : ""}answered by ${getProvider(c.id).label}`, res.note]
+              .filter(Boolean)
+              .join("; "),
+          }
         : res;
     } catch (e) {
       if (req.signal?.aborted) throw e;

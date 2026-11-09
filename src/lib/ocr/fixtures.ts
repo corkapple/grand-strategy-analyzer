@@ -1,0 +1,198 @@
+// Text as read from real screenshots (macOS Vision), with coordinates, server and player names replaced.
+// Kept verbatim otherwise, including the reader's mistakes (stray glyphs, dropped or wrong digits).
+
+export const recon5: string[] = [
+  "Mail",
+  "Y Recon Successful!  |  11-08 21:13",
+  "S:1 X:101 Y:201",
+  "Lv. 8 Elite Police Station",
+  "Defensive Enforcer Lineup  |  Enforcers: 5",
+  "Vvall",
+  "Wall Durability  |  2,500,000/2,500,000",
+  "Traps  |  Traps: 125,000",
+  "*4 Lacerator  |  16,145",
+  "4 Pineapple Grenade  |  104,080",
+  "4 Napalm Bomb  |  4,775",
+  "Defensive Associates  |  2,500,000",
+  "4 Gorillas  |  322,900",
+  "14 Deadeyes  |  95,500",
+  "4 Hell on Wheels  |  2,081,600"
+];
+
+export const recon1: string[] = [
+  "Mail",
+  "Recon Successful!  |  11-08 20:41",
+  "S:1 X:101 Y:201",
+  "/ Lv. & Police Station",
+  "Defensive Enforcer Lineup  |  Enforcers: 5",
+  "Wall",
+  "Wall Durability  |  2,500,000/2,500,000",
+  "Traps  |  Traps: 125,000",
+  "4 Lacerator  |  21,080",
+  "4 Pineapple Grenade  |  21,650",
+  "4 Napalm Bomb  |  82,270ł",
+  "Defensive Associates  |  2,500,000",
+  "4 Gorillas  |  421,600",
+  "4 Deadeyes  |  1,645,400",
+  "84 Hell on Wheels  |  433,00ł",
+  "TAG] Player",
+  "TAG] Player : I just initiated a Raid against Lv. 8 Police Station. .",
+  "Tasks  |  Inventery Enforcers  |  Mait  |  Faction"
+];
+
+export const recon2: string[] = [
+  "Mail",
+  "Recon Successful!  |  11-08 20:1ął",
+  "S:1 X:101 Y:201",
+  "Lv. 8 Police Station",
+  "Defensive Enforcer Lineup  |  Enforcers: 5",
+  "Wall",
+  "Wall Durability  |  2,500,000/2,500,000",
+  "Traps  |  Traps: 124,995",
+  "*4 Lacerator  |  111,790",
+  "4 Pineapple Grenade  |  1,780",
+  "04 Napalm Bomb  |  11,425",
+  "Defensive Associates  |  2,499,900",
+  "4 Gorillas  |  2,235,800",
+  "4 Deadeyes  |  228,500",
+  "4 Hell on Wheels  |  35,600"
+];
+
+export const mail3: string[] = [
+  "Mail",
+  "Successfully Defeated Lv. 8 Elite Police Station!  |  11-08 21:25",
+  "S:1 X:101 Y:201",
+  "OFFENSIVE VICTORY",
+  "Crew Details",
+  "491,492  |  Losses  |  622,087",
+  "-176,868  |  Influence  |  -22,568,577",
+  "Hitman - Wedge  |  Formation  |  Bruiser - Square",
+  "2,044,290  |  Total Associates  |  2,500,000",
+  "2,951  |  Wounded",
+  "1,962  |  Dead  |  622,087ł",
+  "486,579  |  Casualties Reduced 1",
+  "2,039,377  |  Alive  |  1,877,913",
+  "Total Traps  |  125,000",
+  "Requires Repair",
+  "Destroyed:  |  34,689",
+  "Remaining  |  90,311",
+  "Wall Defenses",
+  "Wall Durability  |  2,500,000",
+  "Battle Analysis  |  Battle Details"
+];
+
+export const mail10: string[] = [
+  "Mail",
+  "Successfully Defeated Lv. 7 Elite Police Station!  |  11-08 22:33",
+  "S:1 X:101 Y:201",
+  "OFFENSIVE VICTORY",
+  "Crew Details",
+  "293,969  |  Losses  |  1,390,204",
+  "-105,696  |  Influence  |  -50,268,754",
+  "Hitman - Square  |  Formation  |  Bruiser - Square",
+  "1,862,033  |  Total Associates  |  2,250,000",
+  "766  |  Wounded",
+  "170  |  Dead  |  1,390,20",
+  "291,033  |  Casualties Reduced 1",
+  "1,859,097  |  Alive  |  859,796",
+  "Total Traps  |  112,500",
+  "Requires Repair",
+  "Destroyed:  |  44,282",
+  "Remaining  |  68,218",
+  "Wall Defenses",
+  "Wall Durability  |  2,250,000",
+  "Damadedi  |  2 250 0001"
+];
+
+export const mail21: string[] = [
+  "Successfully Defeated Lv. 8 Police Station!  |  11-08 21:46ł",
+  "S:1 X:101 Y:201",
+  "OFFENSIVE VICTORY",
+  "Attacker [Our Side]  |  VS  |  Defender",
+  "Raid  |  V15 )",
+  "Lv. 60  |  Lv. 8",
+  "[TAG] Player  |  Lv. 8 Police Station",
+  "S:1 X:101 Y:201  |  S:1 X:101 Y:201",
+  "Crew Details",
+  "234,626  |  Losses  |  2,024,637",
+  "-84,348  |  Influence  |  -72,887,602",
+  "Hitman - Square  |  Formation  |  Bruiser - Square",
+  "2,359,550  |  Total Associates  |  2,500,000",
+  "1,409  |  Wounded",
+  "934  |  Dead  |  2,024,637",
+  "232,283  |  Casualties Reduced",
+  "2,357,207  |  Alive  |  475,363",
+  "Battle Analysis  |  Battle Details"
+];
+
+export const mail12: string[] = [
+  "Mail",
+  "Successfully Defeated Lv. 8 Police Station!  |  11-08 21:42",
+  "S:1 X:101 Y:201",
+  "OFFENSIVE VICTORY",
+  "Crew Details",
+  "424,106  |  Losses  |  1,622,913",
+  "-83,120  |  Influence  |  -58,436,408",
+  "Hitman - Square  |  Formation  |  Bruiser - Square",
+  "2 038,861  |  Total Associates  |  2,500,000",
+  "548  |  Wounded",
+  "1,690  |  Dead  |  1,622,913",
+  "419,868  |  Casualties Reduced 1",
+  "2,034,623  |  Alive  |  877,087",
+  "Total Traps  |  125,000",
+  "Requires Repair",
+  "Destroyed:  |  2,308",
+  "Remaining  |  122,692ł",
+  "Wall Defenses",
+  "Wall Durability  |  2,500,000"
+];
+
+export const buff6: string[] = [
+  "Mail",
+  "Successfully Defeated Lv. 8 Elite Police Station!  |  11-08 21:2łł",
+  "• S:1 X:101 Y:201",
+  "OFFENSIVE VICTORY",
+  "Buff Comparison",
+  "·+325.3%  |  Crew ATK  |  +1200.0%",
+  "* +216.9%  |  Crew DEF  |  +1200.0%",
+  "₩+253.0%  |  Crew HP  |  +1200.0%",
+  "1+301.7%  |  Bruiser ATK  |  +0.0%",
+  "*+211.8%  |  Bruiser DEF  |  +0.00",
+  "+ +206.1%  |  Bruiser HP  |  +0.G",
+  "T+492.3%  |  Hitman ATK  |  +0.0%",
+  "+359.2%  |  Hitman DEF  |  +0.0%",
+  "+337.8%  |  Hitman HP  |  +0.0%",
+  "T +369.9%  |  Biker ATK  |  +0.0%",
+  "T+237.1%  |  Biker DEE  |  +0.0%",
+  "T+241.1%  |  Biker HP  |  +0.0%",
+  "1 +152.5%  |  Mortar Car ATK  |  +0.0%",
+  "T +152.5%  |  Mortar Car DEF  |  +0.0%",
+  "++152.5%  |  Mortar Car HP  |  +0.0%",
+  "1 +1,2%  |  Enemy ATK Reduction  |  +0.0%"
+];
+
+export const details20: string[] = [
+  "Battle Details",
+  "Comparison",
+  "Attacker Our",
+  "Side  |  Defender",
+  "Associates  |  Total",
+  "Associates  |  Total Kills Losses  |  Total",
+  "Associates  |  Total Kills Losses",
+  "3,676",
+  "96,150",
+  "42  |  1,921,000 119,541  |  1,921,000",
+  "41  |  110,200  |  16,307  |  9,404",
+  "2,359,455 1,924,810 2,343  |  468,80šîšŚș  |  98,444  |  94,233ł",
+  "1",
+  "*  |  Associate Influence Rating 8.38  |  Associate Influence Rating 6.60",
+  "Attacker's Details [Our Side]",
+  "Player  |  1.12  |  ) 14  |  304,771",
+  "V. 60  |  Lv. 60  |  60  |  v. 60",
+  "122,928  |  • 146,063  |  115,492  |  114,491",
+  "15* 5  |  29* 0",
+  "14,238  |  $ 21,222  |  · 0  |  R 13,496",
+  "• 0  |  ( 3,829",
+  "Nordri",
+  "v. 100  |  65.2%  |  > 678  |  Modification Level"
+];
