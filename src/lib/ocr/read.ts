@@ -132,13 +132,13 @@ export async function readScreens(images: ImageInput[]): Promise<ScreenReading> 
       const r = await consensus(img, parseRecon, criticalRecon, mergeRecon, a, b);
       const agreed = r.agreed;
       recons.push(r);
-      if (!agreed) problems.push(`${label}: the readings of the recon do not agree`);
+      if (!agreed) problems.push(`${label}: readings of the recon disagree`);
       recognised++;
     } else if (kind === "mail") {
       const r = await consensus(img, parseBattleMail, criticalBattle, mergeBattle, a, b);
       const agreed = r.agreed;
       mails.push(r);
-      if (!agreed) problems.push(`${label}: the readings of the battle result do not agree`);
+      if (!agreed) problems.push(`${label}: readings of the battle disagree`);
       recognised++;
     } else if (kind === "details") {
       detailsSeen = true;
@@ -168,7 +168,7 @@ export async function readScreens(images: ImageInput[]): Promise<ScreenReading> 
   // The Battle Details troop rows are icons, which text reading cannot tell apart. They are what lets a battle
   // without a recon count, so in that case an AI model reads the screenshots.
   const needsAi = detailsSeen && !!mail && !recon;
-  if (needsAi) problems.push("Battle Details lists troops by icon; an AI reads them so this battle can count without a recon");
+  if (needsAi) problems.push("Battle Details needs an AI (troop icons)");
 
   const verified =
     !needsAi &&
@@ -176,7 +176,7 @@ export async function readScreens(images: ImageInput[]): Promise<ScreenReading> 
     !!(recon || mail || reconFailed) &&
     (!recon || (recon.agreed && recon.value.verified)) &&
     (!mail || (mail.agreed && mail.value.verified)) &&
-    !problems.some((p) => /do not agree|no recon/.test(p));
+    !problems.some((p) => /disagree|no recon/.test(p));
 
   const confidence = verified ? "high" : "low";
   const note = verified

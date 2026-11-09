@@ -198,7 +198,7 @@ export function createOpenAICompatible(
       }
     }
     throw new ProviderError(
-      `All free models failed or timed out (${errors.join("; ")}). Try again later, pick a specific model in Settings, or use Gemini.`,
+      `All free models failed or timed out (${errors.join("; ")})`,
       spec.id,
     );
   }

@@ -37,7 +37,7 @@ export const localReader: LLMProvider = {
     }
     if (strict && !reading.verified) {
       throw new ProviderError(
-        `The on-device reading is not certain enough to trust (${reading.problems.join("; ") || "checks failed"}).`,
+        `not certain enough to trust (${reading.problems.join("; ") || "checks failed"})`,
         "local",
       );
     }

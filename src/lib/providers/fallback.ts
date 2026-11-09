@@ -64,7 +64,7 @@ export const retry = { delayMs: 2000 };
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const isOverload = (e: unknown) => e instanceof ProviderError && (e.status === 502 || e.status === 503 || e.status === 504);
 /** One line, without the raw JSON some providers send. */
-const brief = (e: unknown) => (e as Error).message.split("\n")[0].replace(/\s+/g, " ").trim().slice(0, 200);
+const brief = (e: unknown) => (e as Error).message.split("\n")[0].replace(/\s+/g, " ").trim().slice(0, 320);
 
 export async function analyzeWithFallback(chain: Candidate[], req: VisionRequest): Promise<VisionResponse> {
   const skipped: string[] = [];

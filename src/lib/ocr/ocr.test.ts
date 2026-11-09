@@ -186,6 +186,17 @@ describe("on-device reader", () => {
     expect(parseAuto(lenient.text).battle).not.toBeNull();
     expect((await readScreens([img("recon5"), img("mail3"), img("details20")])).verified).toBe(true);
   });
+  it("gives a refusal short enough to read in full, even with several reasons", async () => {
+    flaky();
+    let message = "";
+    try {
+      await localReader.analyze({ images: [img("mail10"), img("details20")], systemPrompt: "", userPrompt: "" }, { extra: { strict: "1" } });
+    } catch (e) {
+      message = (e as Error).message;
+    }
+    expect(message.length).toBeLessThan(260);
+    expect(message.endsWith(")")).toBe(true);
+  });
   it("reports a failed recon so the app can advise a full Bikers raid", async () => {
     setOcrEngine(async (i) => (i.base64 === "failed" ? ["Mail", "Recon Failed!", "The target used an Anti-Recon item"] : screens[i.base64]));
     const r = await readScreens([img("failed"), img("mail21")]);

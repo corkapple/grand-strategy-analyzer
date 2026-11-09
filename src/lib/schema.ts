@@ -307,7 +307,8 @@ export function parseBattleReport(text: string): BattleReport {
     const repaired = notes.every((n) => n.startsWith("Corrected"));
     // The model's own worry ("Dead differs from Losses") described the numbers we just fixed, so it is dropped.
     b.notes = (repaired ? notes : [b.notes, ...notes]).filter(Boolean).join(" ");
-    if (repaired && b.confidence === "low") b.confidence = "medium";
+    // A reading we had to correct is at best "medium", whatever the model claimed.
+    if (repaired && b.confidence !== "medium") b.confidence = "medium";
   }
   return b;
 }
