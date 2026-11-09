@@ -67,11 +67,16 @@ export function rematchAdvice(
   }
   if (send) lines.push(`Send ${send}${s.formation ? ` in ${s.formation}` : ""}.`);
   if (ratio) lines.push(`You had ${ratio.toFixed(2)}x their army and killed ${pct(enemyLossRatio(b))} of it.`);
-  if (lost && known && lead && want && lead === want) {
-    lines.push("The matchup was right, so it came down to numbers: bring more associates, or call a rally.");
-  }
   // A concrete army size, from the smallest of your own wins that used the right counter.
   const win = history ? smallestCounterWin(history.pairs, cfg, history.lossCap) : null;
+  if (lost && known && lead && want && lead === want) {
+    const enough = !!(win && ratio && ratio >= win.ratio * 0.98);
+    lines.push(
+      enough
+        ? "The matchup was right and you already sent more than your earlier wins needed, so this enemy is stronger per troop than those targets (gear, traps, formation). Bring clearly more than their army, or call a rally."
+        : "The matchup was right, so it came down to numbers: bring more associates, or call a rally.",
+    );
+  }
   if (win && theirs) {
     const need = Math.ceil((win.ratio * theirs) / 10_000) * 10_000;
     const fewer = ratio && ratio < win.ratio * 0.98;

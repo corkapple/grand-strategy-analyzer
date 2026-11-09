@@ -6,7 +6,7 @@ import { log } from "@/lib/log";
 import { TROOP_LABEL, type StrategyConfig, type TroopType } from "@/lib/strategy";
 import { useHistory } from "@/store/history";
 import { useSettings } from "@/store/settings";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 /**
  * After a battle: what to send next time against the enemy it faced. For a defeat this is the way to win it.
@@ -34,8 +34,13 @@ export default function RematchPanel({
     [battle, enemy, config, pairs, lossCap, ledWith],
   );
   // Written to the diagnostic log so the advice can be checked without a screenshot.
+  const logged = useRef("");
   useEffect(() => {
-    if (advice) log("rematch.advice", { lost: advice.lost, lines: advice.lines });
+    if (!advice) return;
+    const key = advice.lines.join("|");
+    if (key === logged.current) return;
+    logged.current = key;
+    log("rematch.advice", { lost: advice.lost, lines: advice.lines });
   }, [advice]);
   if (!enemy) {
     const lost = battle.result === "defeat";
