@@ -91,13 +91,20 @@ export default function SettingsView() {
         )}
         {!provider.capabilities.manual && (
           <>
-            <Field label="Base URL">
-              <input
-                className="input"
-                value={cfg.baseUrl ?? ""}
-                onChange={(e) => up({ baseUrl: e.target.value })}
-              />
-            </Field>
+            {provider.id === "puter" ? (
+              <p className="text-xs text-amber-400">
+                Puter needs a one-time sign-in: use the "Free backup AI with no API key (Puter)" card further down this page.
+                {!s.providers.puter?.extra?.signedIn && " You are not signed in yet."}
+              </p>
+            ) : (
+              <Field label="Base URL">
+                <input
+                  className="input"
+                  value={cfg.baseUrl ?? ""}
+                  onChange={(e) => up({ baseUrl: e.target.value })}
+                />
+              </Field>
+            )}
             {provider.id !== "browser" && (
               <Field label="Model">
                 <input
