@@ -55,7 +55,7 @@ function Entry({ e }: { e: KnowledgeEntry }) {
 }
 
 export default function KnowledgeView() {
-  const { entries, loaded, checking, log, error, load, check, discover, discovering, suggestions, discoverNotes, dismissSuggestion } =
+  const { entries, loaded, checking, log, error, load, check, discover, discovering, suggestions, discoverNotes, dismissSuggestion, sharedNote } =
     useKnowledge();
   const s = useSettings();
   const [url, setUrl] = useState("");
@@ -96,8 +96,8 @@ export default function KnowledgeView() {
         </div>
         {!inTauri && (
           <p className="rounded border border-amber-500/60 p-2 text-xs text-amber-300">
-            A web browser is not allowed to read other websites' pages, so guide checks fail here ("Failed to fetch"). Use the
-            desktop app for this tab; everything else works in the browser.
+            A web browser is not allowed to read other websites' pages, so reading guides yourself needs the desktop app. The
+            shared facts below still work: a daily GitHub job reads the guides for everyone.
           </p>
         )}
         <label className="flex flex-wrap items-center gap-2 text-sm">
@@ -142,7 +142,11 @@ export default function KnowledgeView() {
         {urlError && <p className="text-xs text-red-400">{urlError}</p>}
 
         <div className="flex flex-wrap items-center gap-2">
-          <button className="btn btn-primary" disabled={checking || !inTauri} onClick={() => void check({})}>
+          <button className="btn btn-primary" onClick={() => void useKnowledge.getState().syncShared()}>
+            Get shared facts
+          </button>
+          {sharedNote && <span className="text-xs text-zinc-400">{sharedNote}</span>}
+          <button className="btn" disabled={checking || !inTauri} onClick={() => void check({})}>
             {checking ? "Checking…" : "Check now"}
           </button>
           <button className="btn" disabled={checking || !inTauri} onClick={() => void check({ force: true })}>

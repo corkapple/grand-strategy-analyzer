@@ -1,8 +1,9 @@
 import { create } from "zustand";
-import { dueSources, extractionChain, updateSource, type EntryStatus, type KnowledgeEntry } from "@/lib/knowledge";
+import { SHARED_KNOWLEDGE_URL, dueSources, extractionChain, parseShared, updateSource, type EntryStatus, type KnowledgeEntry } from "@/lib/knowledge";
 import { fallbackCandidates } from "@/lib/providers/fallback";
 import { discoverGuides, type Suggestion } from "@/lib/discover";
 import { kAll, kDelete, kPut } from "@/lib/historyDb";
+import { httpFetch } from "@/lib/providers/http";
 import { useSettings } from "./settings";
 
 interface KnowledgeState {
@@ -13,6 +14,8 @@ interface KnowledgeState {
   log: string[];
   error: string | null;
   discovering: boolean;
+  /** Result of the last shared-facts sync. */
+  sharedNote: string | null;
   /** Pages found by search, not yet added to the source list. */
   suggestions: Suggestion[];
   discoverNotes: string[];
@@ -23,6 +26,8 @@ interface KnowledgeState {
   /** Accept / reject / reset an entry. Accepted formation advice changes the recommendations. */
   setStatus: (id: string, status: EntryStatus) => Promise<void>;
   remove: (id: string) => Promise<void>;
+  /** Pull the facts the daily GitHub job extracted from the guides (works in the browser too). */
+  syncShared: () => Promise<void>;
   /** Re-read the guide sources. `onlyDue` skips sources checked within the update interval. */
   check: (opts?: { force?: boolean; onlyDue?: boolean }) => Promise<void>;
 }
@@ -51,6 +56,7 @@ export const useKnowledge = create<KnowledgeState>((set, get) => ({
   log: [],
   error: null,
   discovering: false,
+  sharedNote: null,
   suggestions: [],
   discoverNotes: [],
 
@@ -114,6 +120,24 @@ export const useKnowledge = create<KnowledgeState>((set, get) => ({
     if (entry.status === "accepted") releaseFormation(entry, get().entries);
     await kDelete(id);
     set({ entries: get().entries.filter((x) => x.id !== id) });
+  },
+
+  syncShared: async () => {
+    if (!get().loaded) await get().load();
+    try {
+      const res = await httpFetch(SHARED_KNOWLEDGE_URL, { cache: "no-cache" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const incoming = parseShared(await res.json());
+      const have = new Set(get().entries.map((e) => e.id));
+      const fresh = incoming.filter((e) => !have.has(e.id));
+      for (const e of fresh) await kPut(e);
+      set({
+        entries: [...get().entries, ...fresh],
+        sharedNote: fresh.length ? `${fresh.length} new shared ${fresh.length === 1 ? "fact" : "facts"} to review.` : "No new shared facts.",
+      });
+    } catch (e) {
+      set({ sharedNote: `Could not get the shared facts: ${msg(e)}` });
+    }
   },
 
   check: async (opts = {}) => {

@@ -1,0 +1,39 @@
+name: Game knowledge
+
+# Once a day: read the guide pages listed in data/knowledge-sources.json, extract facts with Gemini, keep only facts
+# whose quote is on the page word-for-word, and commit data/knowledge.json. Every copy of the app reads that file.
+# Needs the repository secret GEMINI_API_KEY (a free Google AI Studio key).
+on:
+  schedule:
+    - cron: "41 3 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Re-read pages even if unchanged"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Refresh facts
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FORCE: ${{ inputs.force && '1' || '' }}
+        run: npx tsx scripts/knowledge-refresh.ts
+      - name: Commit
+        run: |
+          git config user.name "gsa-bot"
+          git config user.email "gsa-bot@users.noreply.github.com"
+          git add data/knowledge.json
+          git diff --cached --quiet || (git commit -m "Update shared game knowledge" && git push)

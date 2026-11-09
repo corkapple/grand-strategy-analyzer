@@ -145,3 +145,28 @@ describe("verifyFacts with too many facts", () => {
     expect(r.entries.length + r.dropped).toBe(40);
   });
 });
+
+describe("shared facts from the repository", () => {
+  const good = {
+    id: "d958630860c704ad",
+    kind: "formation",
+    statement: "Lead Bruisers in Wedge",
+    quote: "Since one type of troop lines up in a single row",
+    sourceUrl: "https://note.com/x",
+    sourceTitle: "A guide",
+    formation: { lead: "Gangsters", name: "Bruiser - Wedge" },
+  };
+  it("accepts valid facts as pending and re-checks them", async () => {
+    const { parseShared } = await import("./knowledgeCore");
+    const out = parseShared({ entries: [good, { ...good, id: "bad id" }, { ...good, id: "aaaaaaaa1", sourceUrl: "http://insecure.example" }, { ...good, id: "bbbbbbbb1", formation: { lead: "bruisers", name: "Nonsense" } }] });
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ status: "pending", formation: { lead: "bruisers", name: "Bruiser - Wedge" } });
+  });
+  it("flags a counter that contradicts the game's chart and ignores junk", async () => {
+    const { parseShared } = await import("./knowledgeCore");
+    const wrong = { ...good, id: "cccccccc1", kind: "counter", formation: undefined, counter: { winner: "hitmen", loser: "bruisers" } };
+    expect(parseShared({ entries: [wrong] })[0].chart).toBe("conflicts");
+    expect(parseShared(null)).toEqual([]);
+    expect(parseShared({ entries: "x" })).toEqual([]);
+  });
+});

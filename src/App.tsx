@@ -61,7 +61,10 @@ export default function App({ initialView = "analyzer" }: { initialView?: View }
     let timer: ReturnType<typeof setTimeout> | undefined;
     const run = () => {
       timer = setTimeout(() => {
-        if (inTauri && useSettings.getState().autoUpdate) void useKnowledge.getState().check({ onlyDue: true });
+        if (useSettings.getState().autoUpdate) {
+          void useKnowledge.getState().syncShared();
+          if (inTauri) void useKnowledge.getState().check({ onlyDue: true });
+        }
       }, 3000);
     };
     if (useSettings.getState().secretsReady) run();
