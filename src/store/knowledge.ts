@@ -125,7 +125,7 @@ export const useKnowledge = create<KnowledgeState>((set, get) => ({
   syncShared: async () => {
     if (!get().loaded) await get().load();
     try {
-      const res = await httpFetch(SHARED_KNOWLEDGE_URL, { cache: "no-cache" });
+      const res = await httpFetch(`${SHARED_KNOWLEDGE_URL}?v=${Math.floor(Date.now() / 60_000)}`, { cache: "no-cache" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const incoming = parseShared(await res.json());
       const have = new Set(get().entries.map((e) => e.id));
