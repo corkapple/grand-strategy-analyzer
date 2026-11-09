@@ -1,5 +1,156 @@
 {
-  "generatedAt": null,
-  "sources": [],
-  "entries": []
+  "generatedAt": "2026-11-09T16:42:11.086Z",
+  "sources": [
+    {
+      "url": "https://note.com/game_mafia/n/nc3fd3f77823f?hl=en",
+      "label": "note.com: Formation Part 1 (2026-01-31)",
+      "hash": "48013cf1492013a9cc4410201b24256a1d644427e1994d90806739d00ec662f0",
+      "checkedAt": "2026-11-09T16:41:42.087Z",
+      "status": "14 facts, 1 discarded (quote not on the page)"
+    }
+  ],
+  "entries": [
+    {
+      "id": "308da7d07657e54f",
+      "kind": "number",
+      "statement": "When attacking an enemy with good compatibility, damage dealt is increased by 100%.",
+      "quote": "When attacking an enemy with good compatibility, the damage dealt is 100% UP .",
+      "sourceUrl": "https://note.com/game_mafia/n/nc3fd3f77823f?hl=en",
+      "sourceTitle": "【The Grand Mafia Strategy | Formation Part 1】The Basics of Formations That Many People Get Wrong",
+      "fetchedAt": 1794242531085
+    },
+    {
+      "id": "00771e7202f4ec7c",
+      "kind": "number",
+      "statement": "When attacked by an enemy with good compatibility, damage received is reduced by 50%.",
+      "quote": "When attacked by an enemy with good compatibility, the damage received is 50% DOWN .",
+      "sourceUrl": "https://note.com/game_mafia/n/nc3fd3f77823f?hl=en",
+      "sourceTitle": "【The Grand Mafia Strategy | Formation Part 1】The Basics of Formations That Many People Get Wrong",
+      "fetchedAt": 1794242531085
+    },
+    {
+      "id": "b8425bee5b3baf45",
+      "kind": "counter",
+      "statement": "Bikers are strong against Bruisers.",
+      "quote": "single-type bikers , which are strong against gangsters, will have a greater effect.",
+      "sourceUrl": "https://note.com/game_mafia/n/nc3fd3f77823f?hl=en",
+      "sourceTitle": "【The Grand Mafia Strategy | Formation Part 1】The Basics of Formations That Many People Get Wrong",
+      "fetchedAt": 1794242531085,
+      "counter": {
+        "winner": "bikers",
+        "loser": "bruisers"
+      }
+    },
+    {
+      "id": "75ff9cc4d1e1de72",
+      "kind": "mechanic",
+      "statement": "Troop speed is fastest in the order of Bikers, then Hitmen, then Bruisers.",
+      "quote": "The speed is fastest in the order of Bikers → Shooters → Brawlers.",
+      "sourceUrl": "https://note.com/game_mafia/n/nc3fd3f77823f?hl=en",
+      "sourceTitle": "【The Grand Mafia Strategy | Formation Part 1】The Basics of Formations That Many People Get Wrong",
+      "fetchedAt": 1794242531085
+    },
+    {
+      "id": "080ead8bed717536",
+      "kind": "mechanic",
+      "statement": "In The Grand Mafia's combat system, attacks are received the moment troops collide with the enemy after battle starts.",
+      "quote": "in The Grand Mafia's combat system, you receive attacks the moment you collide with the enemy after the battle starts.",
+      "sourceUrl": "https://note.com/game_mafia/n/nc3fd3f77823f?hl=en",
+      "sourceTitle": "【The Grand Mafia Strategy | Formation Part 1】The Basics of Formations That Many People Get Wrong",
+      "fetchedAt": 1794242531085
+    },
+    {
+      "id": "4a3035ceb9a71162",
+      "kind": "mechanic",
+      "statement": "Hitmen can attack from a distance, resulting in a fast attack start speed.",
+      "quote": "Shooters can attack from a distance, so their attack start speed is fast.",
+      "sourceUrl": "https://note.com/game_mafia/n/nc3fd3f77823f?hl=en",
+      "sourceTitle": "【The Grand Mafia Strategy | Formation Part 1】The Basics of Formations That Many People Get Wrong",
+      "fetchedAt": 1794242531085
+    },
+    {
+      "id": "7e13c645396da642",
+      "kind": "mechanic",
+      "statement": "Bruisers have slow movement speed, are slow to reach the enemy, and their attack start is delayed compared to Bikers or Hitmen.",
+      "quote": "Gangsters have slow movement speed and are slow to reach the enemy. Their attack start is delayed compared to bikers or shooters.",
+      "sourceUrl": "https://note.com/game_mafia/n/nc3fd3f77823f?hl=en",
+      "sourceTitle": "【The Grand Mafia Strategy | Formation Part 1】The Basics of Formations That Many People Get Wrong",
+      "fetchedAt": 1794242531085
+    },
+    {
+      "id": "ff0098eaf5e210be",
+      "kind": "mechanic",
+      "statement": "In a Square Formation, one troop type lines up in a single row, and the front row troops take all hits.",
+      "quote": "Square Formation Since one type of troop lines up in a single row, the troops in the front row basically take all the hits.",
+      "sourceUrl": "https://note.com/game_mafia/n/nc3fd3f77823f?hl=en",
+      "sourceTitle": "【The Grand Mafia Strategy | Formation Part 1】The Basics of Formations That Many People Get Wrong",
+      "fetchedAt": 1794242531085
+    },
+    {
+      "id": "d31fa599c5d82170",
+      "kind": "mechanic",
+      "statement": "Sacrificing a small number of troops as a wall prevents damage while running toward the opponent.",
+      "quote": "By sacrificing a small number of troops to act as a wall, you prevent damage while running toward the opponent",
+      "sourceUrl": "https://note.com/game_mafia/n/nc3fd3f77823f?hl=en",
+      "sourceTitle": "【The Grand Mafia Strategy | Formation Part 1】The Basics of Formations That Many People Get Wrong",
+      "fetchedAt": 1794242531085
+    },
+    {
+      "id": "02c05aa329c8ee48",
+      "kind": "formation",
+      "statement": "Bruiser Square Formation is very effective when attacking with a single Hitman type.",
+      "quote": "Therefore, it is a very effective formation when attacking with a single shooter type .",
+      "sourceUrl": "https://note.com/game_mafia/n/nc3fd3f77823f?hl=en",
+      "sourceTitle": "【The Grand Mafia Strategy | Formation Part 1】The Basics of Formations That Many People Get Wrong",
+      "fetchedAt": 1794242531085,
+      "formation": {
+        "lead": "bruisers",
+        "name": "Bruiser - Square"
+      }
+    },
+    {
+      "id": "d217099bd2312d54",
+      "kind": "formation",
+      "statement": "Hitman Square Formation is often used for Biker attacks in events.",
+      "quote": "This is a formation for Biker attacks often used in events.",
+      "sourceUrl": "https://note.com/game_mafia/n/nc3fd3f77823f?hl=en",
+      "sourceTitle": "【The Grand Mafia Strategy | Formation Part 1】The Basics of Formations That Many People Get Wrong",
+      "fetchedAt": 1794242531085,
+      "formation": {
+        "lead": "hitmen",
+        "name": "Hitman - Square"
+      }
+    },
+    {
+      "id": "98a7c4aad2a59efe",
+      "kind": "tip",
+      "statement": "Hitman Square Formation is effective for Biker-only attacks because Bikers hit last and are in a single horizontal row.",
+      "quote": "because Bikers hit last and are in a single horizontal row, it is effective for Biker-only attacks .",
+      "sourceUrl": "https://note.com/game_mafia/n/nc3fd3f77823f?hl=en",
+      "sourceTitle": "【The Grand Mafia Strategy | Formation Part 1】The Basics of Formations That Many People Get Wrong",
+      "fetchedAt": 1794242531085
+    },
+    {
+      "id": "225630b50ee663ab",
+      "kind": "tip",
+      "statement": "In Hitman Square Formation, the enemy runs to the back to attack Hitmen, allowing all your troops to attack the enemy's front line.",
+      "quote": "Because the enemy runs to the back to attack the Shooters, all your troops can attack the enemy's front line",
+      "sourceUrl": "https://note.com/game_mafia/n/nc3fd3f77823f?hl=en",
+      "sourceTitle": "【The Grand Mafia Strategy | Formation Part 1】The Basics of Formations That Many People Get Wrong",
+      "fetchedAt": 1794242531085
+    },
+    {
+      "id": "74b3b3032f629c5e",
+      "kind": "formation",
+      "statement": "Biker Square Formation is effective for Bruiser-only attacks within a Square formation because Bruisers are at the very back.",
+      "quote": "Since the Gangsters are at the very back, it is effective for Gangster-only attacks within a Square formation.",
+      "sourceUrl": "https://note.com/game_mafia/n/nc3fd3f77823f?hl=en",
+      "sourceTitle": "【The Grand Mafia Strategy | Formation Part 1】The Basics of Formations That Many People Get Wrong",
+      "fetchedAt": 1794242531085,
+      "formation": {
+        "lead": "bikers",
+        "name": "Biker - Square"
+      }
+    }
+  ]
 }
