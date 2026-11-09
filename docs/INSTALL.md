@@ -1,3 +1,5 @@
+> **Easiest start:** open the web version at <https://corkapple.github.io/grand-strategy-analyzer/>. Nothing to install. It keeps your key and history in that browser only, and it cannot use GitHub Models. The desktop app below is faster at reading screenshots.
+
 # Install the app
 
 Pick your computer. You only do this once.

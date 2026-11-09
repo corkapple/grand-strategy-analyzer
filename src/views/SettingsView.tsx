@@ -7,6 +7,7 @@ import { DEFAULT_STRATEGY } from "@/lib/strategy";
 import { COMMUNITY_URL } from "@/lib/community/config";
 import { useCommunity } from "@/store/community";
 import { invoke } from "@tauri-apps/api/core";
+import { inTauri } from "@/lib/secrets";
 import { clearMemoryLog, recentLogText } from "@/lib/log";
 import { copyText } from "@/lib/providers/clipboard";
 import { CURRENT_VERSION, useUpdater } from "@/store/updater";
@@ -75,10 +76,15 @@ export default function SettingsView() {
               onChange={(e) => up({ apiKey: e.target.value })}
             />
             <span className="text-xs text-zinc-500">
-              {s.keychain
-                ? "Stored in your OS keychain."
-                : "Stored in app storage (OS keychain unavailable)."}
-              {s.secretsError && <span className="text-amber-400"> Keychain: {s.secretsError}</span>}
+              {!inTauri
+                ? "Stored in this browser only; it is sent to nowhere except the AI service you chose."
+                : s.keychain
+                  ? "Stored in your OS keychain."
+                  : "Stored in app storage (OS keychain unavailable)."}
+              {inTauri && s.secretsError && <span className="text-amber-400"> Keychain: {s.secretsError}</span>}
+              {!inTauri && s.activeProvider === "github" && (
+                <span className="text-amber-400"> GitHub Models does not allow web pages to call it; use the desktop app, or pick another provider.</span>
+              )}
             </span>
           </Field>
         )}
@@ -224,7 +230,7 @@ export default function SettingsView() {
         </p>
       </section>
 
-      <UpdateSettings />
+      {inTauri && <UpdateSettings />}
 
       <DiagnosticsSettings />
 

@@ -7,7 +7,7 @@
 A free desktop app for Windows and Mac that reads your recon reports and battle mails, tells you exactly
 what to send, and learns from every fight you win.
 
-[**Download the latest version**](../../releases/latest) · [Install guide](docs/INSTALL.md) · [How to use it](docs/USING-THE-APP.md) · [Get a free key](docs/FREE-KEY.md) · [Help](docs/TROUBLESHOOTING.md)
+[**Use it in your browser**](https://corkapple.github.io/grand-strategy-analyzer/) · [Download the desktop app](../../releases/latest) · [Install guide](docs/INSTALL.md) · [How to use it](docs/USING-THE-APP.md) · [Get a free key](docs/FREE-KEY.md) · [Help](docs/TROUBLESHOOTING.md)
 
 </div>
 
@@ -58,7 +58,7 @@ what to send, and learns from every fight you win.
 
 ## Get started in 5 minutes
 
-1. **[Download and install](docs/INSTALL.md)** the app for your computer.
+1. **[Open the web app](https://corkapple.github.io/grand-strategy-analyzer/)** (nothing to install), or **[download and install](docs/INSTALL.md)** the desktop app, which reads screenshots faster and keeps your key in the system keychain.
 2. **[Get a free key](docs/FREE-KEY.md)** (about 2 minutes, no credit card) and paste it into Settings.
 3. Open the **Analyzer** tab, drop in your screenshots, and click **Analyze**.
 

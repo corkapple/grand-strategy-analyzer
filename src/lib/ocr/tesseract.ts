@@ -8,9 +8,9 @@ function getWorker(): Promise<Worker> {
   worker ??= (async () => {
     const { createWorker } = await import("tesseract.js");
     const w = await createWorker("eng", 1, {
-      workerPath: "/ocr/worker.min.js",
-      corePath: "/ocr",
-      langPath: "/ocr",
+      workerPath: `${import.meta.env.BASE_URL}ocr/worker.min.js`,
+      corePath: `${import.meta.env.BASE_URL}ocr`,
+      langPath: `${import.meta.env.BASE_URL}ocr`,
       gzip: true,
       cacheMethod: "none",
     });
