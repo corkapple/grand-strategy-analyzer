@@ -4,7 +4,8 @@
 
 When you click **Analyze**, the app first reads your screenshots **on your own computer**. Nothing is sent anywhere
 if that reading checks out. Only when it can't verify the numbers is a screenshot sent to the AI service you picked
-(Google Gemini, OpenRouter and so on) so it can read them; that service's own privacy rules then apply. The screenshots
+(Google Gemini, OpenRouter and so on) so it can read them; that service's own privacy rules then apply. When you send a battle with its Battle Details screen and no recon, the app asks an AI service to read those
+screenshots, because the troop icons on Battle Details need an AI to tell apart. The screenshots
 are **never** sent to the app's makers. You can switch the on-device reading off in Settings. A small thumbnail is stored in your own **History** on your computer.
 
 ## Your keys and history

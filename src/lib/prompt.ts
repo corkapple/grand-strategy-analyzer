@@ -70,7 +70,8 @@ Rules:
 - The Battle Details screen has a comparison table with one row per troop type and tier. The icon says the type
   (blade/club = Bruisers, rifle = Hitmen, motorcycle = Bikers, mortar/rocket vehicle = Mortars) and the small digit is the tier.
   For each side, add the "Total Associates" of all tiers of one type and put the sums in "troops". If the Battle Details
-  screen is not among the screenshots, use null for "troops". Rows for traps, cars or helicopters are not troops.
+  screen is not among the screenshots, use null for "troops". The troops of one side should add up to that side's totalAssociates;
+  re-check a row if they do not. Rows for traps, cars or helicopters are not troops.
 
 Crew Details mapping (attacker / defender):
 - "Formation" -> formation, text as printed (e.g. "Hitman - Wedge", "Bruiser - Square")

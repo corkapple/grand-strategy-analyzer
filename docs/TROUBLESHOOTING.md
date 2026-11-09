@@ -75,6 +75,11 @@ The app matches by **target coordinates and time**. The recon must be taken **be
 attack on that target may sit between the two. Do a fresh recon before each attack. A battle without a recon is still
 saved.
 
+## A battle shows "no matching recon"
+
+Send the **Battle Details** screen together with the victory mail. The app then uses the enemy troops shown there as the
+enemy mix. Or send a recon of the same target before the attack. See "No recon? That works too" in [Using the app](USING-THE-APP.md).
+
 ## History says I led with the wrong troops
 
 Include the **Battle Details** screenshot with the victory mail. Without it the app has to guess from the formation

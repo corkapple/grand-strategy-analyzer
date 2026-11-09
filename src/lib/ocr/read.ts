@@ -117,6 +117,7 @@ async function consensus<T extends { verified: boolean }>(
 export async function readScreens(images: ImageInput[]): Promise<ScreenReading> {
   const recons: Read<ReconRead>[] = [];
   const mails: Read<BattleRead>[] = [];
+  let detailsSeen = false;
   const buffs: Buff[][] = [];
   let reconFailed = false;
   const problems: string[] = [];
@@ -138,6 +139,9 @@ export async function readScreens(images: ImageInput[]): Promise<ScreenReading> 
       const agreed = r.agreed;
       mails.push(r);
       if (!agreed) problems.push(`${label}: the readings of the battle result do not agree`);
+      recognised++;
+    } else if (kind === "details") {
+      detailsSeen = true;
       recognised++;
     } else if (kind === "reconFailed") {
       reconFailed = true;
@@ -161,7 +165,13 @@ export async function readScreens(images: ImageInput[]): Promise<ScreenReading> 
   if (!recognised) problems.push("no recon report or battle result found in these screenshots");
   if (recons.length > 1) problems.push(`using the newest of ${recons.length} recon screenshots`);
 
+  // The Battle Details troop rows are icons, which text reading cannot tell apart. They are what lets a battle
+  // without a recon count, so in that case an AI model reads the screenshots.
+  const needsAi = detailsSeen && !!mail && !recon;
+  if (needsAi) problems.push("Battle Details lists troops by icon; an AI reads them so this battle can count without a recon");
+
   const verified =
+    !needsAi &&
     recognised > 0 &&
     !!(recon || mail || reconFailed) &&
     (!recon || (recon.agreed && recon.value.verified)) &&

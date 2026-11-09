@@ -175,6 +175,17 @@ describe("on-device reader", () => {
     await expect(localReader.analyze({ images: [img("details20")], systemPrompt: "", userPrompt: "" }, { extra: { strict: "1" } })).rejects.toThrow(/no recon report or battle/);
     await expect(localReader.analyze({ images: [img("mail10")], systemPrompt: "", userPrompt: "" }, { extra: { strict: "1" } })).rejects.toThrow(/not certain/);
   });
+  it("leaves a battle with Battle Details (and no recon) to an AI, which can tell the troop icons apart", async () => {
+    steady();
+    const r = await readScreens([img("mail3"), img("details20")]);
+    expect(r.verified).toBe(false);
+    expect(r.problems.join(" ")).toMatch(/Battle Details/);
+    await expect(localReader.analyze({ images: [img("mail3"), img("details20")], systemPrompt: "", userPrompt: "" }, { extra: { strict: "1" } })).rejects.toThrow(/Battle Details/);
+    // The best-effort last resort still answers, and with a recon present nothing needs the AI.
+    const lenient = await localReader.analyze({ images: [img("mail3"), img("details20")], systemPrompt: "", userPrompt: "" }, { extra: { strict: "0" } });
+    expect(parseAuto(lenient.text).battle).not.toBeNull();
+    expect((await readScreens([img("recon5"), img("mail3"), img("details20")])).verified).toBe(true);
+  });
   it("reports a failed recon so the app can advise a full Bikers raid", async () => {
     setOcrEngine(async (i) => (i.base64 === "failed" ? ["Mail", "Recon Failed!", "The target used an Anti-Recon item"] : screens[i.base64]));
     const r = await readScreens([img("failed"), img("mail21")]);

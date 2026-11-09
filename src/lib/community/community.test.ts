@@ -95,3 +95,18 @@ describe("samples from v0.1.4 (no lead field)", () => {
     expect(stats.groups.map((g) => g.lead).sort()).toEqual(["bikers", "hitmen"]);
   });
 });
+
+describe("a battle counted from its Battle Details screen", () => {
+  it("is shared with the enemy mix it showed, like a paired battle", () => {
+    const withTroops = {
+      ...br,
+      id: "lone",
+      report: { ...battle, defender: { ...battle.defender, troops: { bruisers: 2_439_200, hitmen: 25_100, bikers: 35_700, mortars: 0 } } },
+    };
+    const pair = pairBattles([withTroops])[0];
+    expect(pair.recon?.synthetic).toBe(true);
+    const sample = buildSample({ ...pair }, "0.1.8", new Date("2026-11-09T10:00:00Z"));
+    expect(sample?.enemy).toEqual({ bruisers: 98, hitmen: 1, bikers: 1, mortars: 0 });
+    expect(validateSample(sample).ok).toBe(true);
+  });
+});

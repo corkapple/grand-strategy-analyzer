@@ -177,5 +177,5 @@ The images in `docs/images/` are 800 px wide captures of those pages.
   readings and pass the identities, or the result is "unverified" and the next provider runs.
 - **Provider** (`providers/localReader.ts`, id `local`): first in the chain in strict mode, last in best-effort mode
   (`screenshotChain` in `analyze.ts`).
-- Battle Details is not parsed (its troop rows are icons), so the lead troop comes from the formation.
+- Battle Details is not parsed on-device (its troop rows are icons). With a verified mail and a Battle Details screen but no recon, the on-device reader refuses so an AI reads the troops; `syntheticRecon` in `history.ts` then turns the defender troops into the enemy mix.
 - Tests use real reader output with coordinates and names replaced (`src/lib/ocr/fixtures.ts`).

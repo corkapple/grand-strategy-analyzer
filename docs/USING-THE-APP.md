@@ -48,6 +48,11 @@ cost you. **Casualties reduced** are the ones the game saved you from.
 The app saves the result and pairs it with the recon of the same target. It then tells you what it learned, for example
 "Won with 0.2% losses".
 
+**No recon? That works too.** You can send just the victory mail together with its **Battle Details** screen. Battle Details
+shows the troops the enemy had, so the app uses that as the enemy mix, and the battle still counts in History, your playbook
+and the community stats (History marks it "from Battle Details"). Without Battle Details a battle on its own is still
+saved, but the app doesn't know what the enemy had, so it isn't used for the statistics.
+
 > **Tip:** take recon and battle screenshots of the **same target close together**. The app matches them by the
 > target's coordinates and the time.
 

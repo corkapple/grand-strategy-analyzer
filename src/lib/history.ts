@@ -13,6 +13,11 @@ export interface BaseRecord {
 export interface ReconRecord extends BaseRecord {
   kind: "recon";
   report: CombatReport;
+  /**
+   * Not a real recon: built from a battle's Battle Details screen (the defender's troops) when no recon
+   * exists. Never stored; created on the fly by pairBattles.
+   */
+  synthetic?: boolean;
 }
 export interface BattleRecord extends BaseRecord {
   kind: "battle";
@@ -102,6 +107,39 @@ function sameTarget(a: Loc, b: Loc): boolean {
   return a.server == null || b.server == null || a.server === b.server;
 }
 
+/**
+ * The enemy's mix as a recon, built from the defender's troops on the Battle Details screen. This is what
+ * lets a battle with no recon still count. Only used when the troops add up to roughly the defender's
+ * army, so a misread screen does not invent an enemy.
+ */
+export function syntheticRecon(battle: BattleRecord): ReconRecord | null {
+  const b = battle.report;
+  const t = b.defender.troops;
+  if (!t) return null;
+  const sum = (t.bruisers ?? 0) + (t.hitmen ?? 0) + (t.bikers ?? 0) + (t.mortars ?? 0);
+  const total = b.defender.totalAssociates;
+  if (sum <= 0 || (total > 0 && (sum < total * 0.9 || sum > total * 1.1))) return null;
+  return {
+    id: `details:${battle.id}`,
+    kind: "recon",
+    synthetic: true,
+    createdAt: battle.createdAt,
+    thumbs: [],
+    report: {
+      reportType: "recon",
+      timestamp: b.timestamp ?? null,
+      location: b.location ?? null,
+      building: { name: b.target?.name ?? null, level: b.target?.level ?? null },
+      enforcers: { count: 0, names: [] },
+      wallDurability: { current: b.wallDurability, max: b.wallDurability },
+      traps: { lacerator: 0, pineappleGrenade: 0, napalmBomb: 0, total: b.traps.total },
+      associates: { bruisers: t.bruisers ?? 0, hitmen: t.hitmen ?? 0, bikers: t.bikers ?? 0, mortars: t.mortars ?? 0, total: sum },
+      confidence: b.confidence,
+      notes: "Enemy mix taken from the Battle Details screen (no recon).",
+    },
+  };
+}
+
 export interface Pair {
   battle: BattleRecord;
   /** Latest recon of the same coordinates taken at or before the battle. */
@@ -128,7 +166,7 @@ export function pairBattles(records: HistoryRecord[]): Pair[] {
               !earlier.some((o) => recordTime(o) > recordTime(r)),
           )
           .sort((a, b) => recordTime(b) - recordTime(a))[0] ?? null;
-      return { battle, recon };
+      return { battle, recon: recon ?? syntheticRecon(battle) };
     })
     .sort((a, b) => recordTime(b.battle) - recordTime(a.battle));
 }

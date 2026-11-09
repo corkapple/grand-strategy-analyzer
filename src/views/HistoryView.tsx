@@ -118,7 +118,7 @@ export default function HistoryView() {
       {loaded && !records.length && (
         <p className="text-sm text-zinc-400">
           Nothing saved yet. Analyze a recon and then the matching victory/defeat mail; they are paired
-          automatically by coordinates and time.
+          automatically by coordinates and time. A battle with its Battle Details screen also counts without a recon.
         </p>
       )}
 
@@ -184,7 +184,9 @@ export default function HistoryView() {
               </span>
             </summary>
             <div className="mt-3 grid gap-1 text-sm sm:grid-cols-2">
-              <div>Enemy before: {recon ? enemyMix(recon) : "-"}</div>
+              <div>
+                Enemy {recon?.synthetic ? "(from Battle Details)" : "before"}: {recon ? enemyMix(recon) : "-"}
+              </div>
               <div>
                 Your formation: {b.attacker.formation ?? "-"} ({b.attacker.totalAssociates.toLocaleString("en-US")})
               </div>
@@ -216,7 +218,7 @@ export default function HistoryView() {
             <Thumbs recs={[recon, battle]} />
             <div className="mt-2 flex gap-3">
               <Del id={battle.id} />
-              {recon && <Del id={recon.id} />}
+              {recon && !recon.synthetic && <Del id={recon.id} />}
             </div>
           </details>
         );

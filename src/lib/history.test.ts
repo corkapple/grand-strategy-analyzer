@@ -135,3 +135,56 @@ describe("leadTroop: what the attack was led with", () => {
     expect(b.defender.troops?.bruisers).toBe(1921000);
   });
 });
+
+import { syntheticRecon } from "./history";
+
+describe("battles without a recon (enemy mix from Battle Details)", () => {
+  const lone = (defender: Record<string, unknown>, attacker: Record<string, unknown> = {}): BattleRecord => ({
+    id: "bd",
+    kind: "battle",
+    createdAt: Date.now(),
+    thumbs: [],
+    report: parseBattleReport(
+      JSON.stringify({
+        result: "victory",
+        timestamp: "11-08 22:49",
+        location: { server: 1, x: 101, y: 201 },
+        target: { name: "Police Station", level: 8 },
+        attacker: { formation: "Hitman - Square", totalAssociates: 1738596, wounded: 1303, dead: 864, alive: 1736429, losses: 217078, casualtiesReduced: 214911, troops: { bruisers: 42, hitmen: 41, bikers: 1738513, mortars: 0 }, ...attacker },
+        defender: { formation: "Bruiser - Square", totalAssociates: 2500000, wounded: 0, dead: 1600638, alive: 899362, losses: 1600638, troops: { bruisers: 2439200, hitmen: 25100, bikers: 35700, mortars: 0 }, ...defender },
+        traps: { total: 125000, destroyed: 15154, remaining: 109846 },
+        wallDurability: 2500000,
+      }),
+    ),
+  });
+
+  it("builds an enemy mix from the defender's troops", () => {
+    const r = syntheticRecon(lone({}))!;
+    expect(r.synthetic).toBe(true);
+    expect(r.report.associates).toEqual({ bruisers: 2439200, hitmen: 25100, bikers: 35700, mortars: 0, total: 2500000 });
+    expect(r.report.traps.total).toBe(125000);
+    expect(r.report.location).toEqual({ server: 1, x: 101, y: 201 });
+  });
+  it("pairs a lone battle with that enemy mix, and the lead troop is the Bikers actually sent", () => {
+    const pairs = pairBattles([lone({})]);
+    expect(pairs[0].recon?.synthetic).toBe(true);
+    const stats = matchupStats(pairs, (r) => recommendedLead(r));
+    expect(stats[0]).toMatchObject({ enemy: "bruisers", ours: "bikers", n: 1, wins: 1, followedAdvice: 1 });
+  });
+  it("does not invent an enemy when the troops do not add up to the defender's army", () => {
+    expect(syntheticRecon(lone({ troops: { bruisers: 100, hitmen: 0, bikers: 0, mortars: 0 } }))).toBeNull();
+    expect(pairBattles([lone({ troops: { bruisers: 100, hitmen: 0, bikers: 0, mortars: 0 } })])[0].recon).toBeNull();
+  });
+  it("needs the troops: without them a lone battle stays unpaired, as before", () => {
+    const b = lone({});
+    b.report.defender.troops = null;
+    expect(pairBattles([b])[0].recon).toBeNull();
+  });
+  it("prefers a real recon over the Battle Details mix", () => {
+    const b = lone({});
+    const real: ReconRecord = { ...reconRec, id: "real", report: { ...recon, timestamp: "11-08 22:30", location: { server: 1, x: 101, y: 201 } } };
+    const pair = pairBattles([real, b])[0];
+    expect(pair.recon?.id).toBe("real");
+    expect(pair.recon?.synthetic).toBeUndefined();
+  });
+});
