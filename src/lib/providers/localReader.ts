@@ -1,3 +1,4 @@
+import { log } from "../log";
 import { readScreens } from "../ocr/read";
 import { ProviderError, type LLMProvider } from "./types";
 
@@ -32,6 +33,7 @@ export const localReader: LLMProvider = {
     } catch (e) {
       throw new ProviderError(`The on-device reader could not run: ${(e as Error).message}`, "local");
     }
+    log("local.reading", { verified: reading.verified, recon: !!reading.recon, battle: !!reading.battle, reconFailed: reading.reconFailed, problems: reading.problems, strict });
     if (!reading.recon && !reading.battle && !reading.reconFailed) {
       throw new ProviderError("The on-device reader found no recon report or battle result.", "local");
     }

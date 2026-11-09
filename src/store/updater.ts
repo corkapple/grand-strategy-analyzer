@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { APP_VERSION } from "@/lib/community/config";
+import { log } from "@/lib/log";
 import { useSettings } from "@/store/settings";
 
 const inTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -39,6 +40,7 @@ export const useUpdater = create<UpdaterState>((set, get) => ({
     try {
       const { check } = await import("@tauri-apps/plugin-updater");
       const update = await check();
+      log("update.check", { available: update?.version ?? null, current: APP_VERSION });
       if (update) {
         pending = update;
         set({ status: "available", version: update.version, notes: update.body ?? null });
@@ -48,12 +50,14 @@ export const useUpdater = create<UpdaterState>((set, get) => ({
       }
     } catch (e) {
       // An offline computer or an unreachable server is normal; only say so when the user asked.
+      log("update.check_failed", { message: e instanceof Error ? e.message : String(e), manual }, "warn");
       set({ status: manual ? "error" : "idle", error: manual ? friendly(e) : null });
     }
   },
 
   install: async () => {
     if (!pending) return;
+    log("update.install", { to: get().version });
     set({ status: "downloading", progress: 0, error: null });
     try {
       let total = 0;
@@ -69,6 +73,7 @@ export const useUpdater = create<UpdaterState>((set, get) => ({
       const { relaunch } = await import("@tauri-apps/plugin-process");
       await relaunch();
     } catch (e) {
+      log("update.install_failed", { message: e instanceof Error ? e.message : String(e) }, "error");
       set({ status: "error", error: friendly(e), progress: null });
     }
   },

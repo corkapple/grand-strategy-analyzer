@@ -18,7 +18,8 @@ import {
   type CombatReport,
 } from "@/lib/schema";
 import RematchPanel from "@/components/RematchPanel";
-import { pairBattles } from "@/lib/history";
+import { debugReport, lastRun, log, newRun } from "@/lib/log";
+import { leadTroop, pairBattles } from "@/lib/history";
 import { useCommunity } from "@/store/community";
 import { useHistory } from "@/store/history";
 import { useSettings } from "@/store/settings";
@@ -42,6 +43,8 @@ export default function AnalyzerView() {
   const [battle, setBattle] = useState<BattleReport | null>(demo?.battle ?? null);
   /** A best-effort reading nothing could verify: shown, but only saved if the user says so. */
   const [unsaved, setUnsaved] = useState<{ r: AutoResult; shots: ImageInput[]; providerId: string } | null>(null);
+  const [runId, setRunId] = useState<string | undefined>(lastRun());
+  const [copiedDebug, setCopiedDebug] = useState(false);
   const [manual, setManual] = useState<{ prompt: string; reply: string } | null>(null);
   const abort = useRef<AbortController | null>(null);
 
@@ -88,6 +91,7 @@ export default function AnalyzerView() {
         provider: providerId,
       } as HistoryRecord;
       const stored = await addRecord(record);
+      log("history.saved", { kind: stored.kind, replacedExisting: stored.id !== record.id });
       if (stored.kind === "battle") void useCommunity.getState().shareBattle(stored.id);
       setNotice(
         stored.kind === "battle"
@@ -118,6 +122,7 @@ export default function AnalyzerView() {
     if (!saveHistory) return;
     // A reading nothing could confirm must not teach the playbook or the community stats by itself.
     if (!verified) {
+      log("analyze.not_saved", { why: "unverified on-device reading" }, "warn");
       setUnsaved({ r, shots, providerId });
       return;
     }
@@ -125,6 +130,7 @@ export default function AnalyzerView() {
   };
 
   const fail = (e: unknown, text?: string) => {
+    log("analyze.error", { message: (e as Error).message, reply: e instanceof ReportParseError ? e.raw.slice(0, 300) : text?.slice(0, 300) }, "error");
     setError((e as Error).message);
     setRaw(e instanceof ReportParseError ? e.raw : (text ?? null));
   };
@@ -153,10 +159,12 @@ export default function AnalyzerView() {
 
   const run = async () => {
     abort.current = new AbortController();
+    setRunId(newRun());
     const shots = images; // snapshot: the user may remove screenshots while we wait
     const chain = fallbackCandidates(settings);
     const ask = (id: typeof activeProvider, config: (typeof providers)[typeof activeProvider], fallbacks: typeof chain) =>
       runVision({ providerId: id, config, fallbacks, localFirst: settings.localFirst, images: shots, customPrompt, signal: abort.current!.signal });
+    log("analyze.start", { images: shots.length, main: activeProvider, localFirst: settings.localFirst, fallbacks: chain.map((c) => c.id) });
     setBusy(true);
     setAnsweredBy(null);
     setFallbackNote(null);
@@ -186,6 +194,19 @@ export default function AnalyzerView() {
         };
       }
       setAnsweredBy(res.model ?? null);
+      log("analyze.result", {
+        answeredBy: res.model,
+        recon: parsed.recon && { associates: parsed.recon.associates, traps: parsed.recon.traps.total, confidence: parsed.recon.confidence },
+        battle: parsed.battle && {
+          result: parsed.battle.result,
+          confidence: parsed.battle.confidence,
+          attacker: { ...parsed.battle.attacker, lead: leadTroop(parsed.battle, strategy.formations) },
+          defender: { ...parsed.battle.defender },
+          enemyMixKnown: !!parsed.battle.defender.troops,
+          notes: parsed.battle.notes,
+        },
+        reconFailed: parsed.reconFailed,
+      });
       if (res.note) setFallbackNote(res.note);
       show(parsed, shots, res.providerId, !/unverified/i.test(res.model ?? ""));
     } catch (e) {
@@ -206,6 +227,20 @@ export default function AnalyzerView() {
         <button className="btn btn-primary" disabled={!images.length || busy} onClick={() => void run()}>
           {busy ? `Analyzing… ${elapsed}s` : "Analyze"}
         </button>
+        {runId && !busy && (
+          <button
+            className="btn"
+            title="Copies a short, private report of what the app just did, to paste when asking for help"
+            onClick={() => {
+              void copyText(debugReport({ run: runId })).then(() => {
+                setCopiedDebug(true);
+                setTimeout(() => setCopiedDebug(false), 2000);
+              });
+            }}
+          >
+            {copiedDebug ? "Copied!" : "Copy debug info"}
+          </button>
+        )}
         {busy && (
           <button className="btn" onClick={() => abort.current?.abort()}>
             Cancel

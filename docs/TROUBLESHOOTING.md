@@ -1,5 +1,14 @@
 # Troubleshooting
 
+## How to ask for help (without screenshots)
+
+After an analysis that went wrong, click **Copy debug info** next to the Analyze button and paste the text where you are asking for
+help. It is a few short lines: which services were tried, why each failed, who answered, and the numbers that were read or repaired.
+For something that happened earlier, use **Settings → Copy recent log**. **Open log folder** shows the file itself.
+
+The log stays on your computer. It never contains your API keys, your screenshots, coordinates, the server number or player
+names. It is only shared if you paste it yourself, and you can switch it off in Settings.
+
 ## The app won't open
 
 **Windows: "Windows protected your PC".** Click **More info**, then **Run anyway**. This is normal for a new app.

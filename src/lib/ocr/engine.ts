@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { log } from "../log";
 import type { ImageInput } from "../providers/types";
 import { tesseractRows } from "./tesseract";
 
@@ -29,9 +30,11 @@ export const readRows: OcrEngine = async (img, scale) => {
     try {
       const rows = toRows(await invoke<string>("ocr_native", { imageBase64: img.base64, scale }));
       if (rows.length) return rows;
-    } catch {
+    } catch (e) {
       // No native reader here (or it failed): use the bundled one.
+      log("ocr.native_failed", { message: (e as Error)?.message ?? String(e) }, "warn");
     }
   }
+  log("ocr.engine", { engine: "bundled WASM reader" });
   return tesseractRows(img, scale);
 };

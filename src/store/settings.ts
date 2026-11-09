@@ -67,6 +67,9 @@ interface SettingsState {
   /** Look for a newer version of the app and offer to install it. */
   checkUpdates: boolean;
   setCheckUpdates: (v: boolean) => void;
+  /** Keep a diagnostic log on this computer (never sent anywhere). */
+  keepLog: boolean;
+  setKeepLog: (v: boolean) => void;
   setAutoFallback: (v: boolean) => void;
   setMeshGuides: (v: boolean) => void;
   setFallbackEnabled: (v: boolean) => void;
@@ -90,6 +93,7 @@ const initial = () => ({
   shareResults: true,
   shareNoticeSeen: false,
   autoFallback: true,
+  keepLog: true,
   checkUpdates: true,
   localFirst: true,
   meshGuides: true,
@@ -189,6 +193,7 @@ export const useSettings = create<SettingsState>()(
       secretsError: null,
       setLocalFirst: (localFirst) => set({ localFirst }),
       setCheckUpdates: (checkUpdates) => set({ checkUpdates }),
+      setKeepLog: (keepLog) => set({ keepLog }),
       setAutoFallback: (autoFallback) => set({ autoFallback }),
       setMeshGuides: (meshGuides) => set({ meshGuides }),
       setShareResults: (shareResults) => set({ shareResults, shareNoticeSeen: true }),
@@ -251,6 +256,7 @@ export const useSettings = create<SettingsState>()(
         fallbackProvider: s.fallbackProvider,
         shareResults: s.shareResults,
         autoFallback: s.autoFallback,
+        keepLog: s.keepLog,
         checkUpdates: s.checkUpdates,
         localFirst: s.localFirst,
         meshGuides: s.meshGuides,

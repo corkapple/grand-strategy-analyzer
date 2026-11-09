@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { APP_VERSION, COMMUNITY_URL } from "@/lib/community/config";
+import { log } from "@/lib/log";
 import { fetchStats, postSample, type CommunityStats } from "@/lib/community/client";
 import { buildSample, type Sample } from "@/lib/community/sample";
 import { pairBattles } from "@/lib/history";
@@ -54,20 +55,31 @@ export const useCommunity = create<CommunityState>((set, get) => ({
     if (stats) set({ stats });
   },
   shareBattle: async (battleId) => {
-    if (!COMMUNITY_URL || !useSettings.getState().shareResults) return;
+    if (!COMMUNITY_URL || !useSettings.getState().shareResults) {
+      log("share.skip", { why: !COMMUNITY_URL ? "no server in this build" : "sharing is off" });
+      return;
+    }
     const ids = readIds();
     const pair = pairBattles(useHistory.getState().records).find((p) => p.battle.id === battleId);
     const sample = pair && buildSample(pair, APP_VERSION, new Date(), useSettings.getState().strategy.formations);
-    if (!sample) return; // needs a matching recon to be useful; retried later if one arrives
+    if (!sample) {
+      log("share.skip", { why: "no enemy mix (no recon or readable Battle Details)" });
+      return; // needs a matching recon to be useful; retried later if one arrives
+    }
     const content = contentOf(sample);
-    if (ids.get(battleId) === content) return; // already sent exactly this
+    if (ids.get(battleId) === content) {
+      log("share.skip", { why: "already sent exactly this" });
+      return;
+    }
     try {
       localStorage.setItem(LAST_KEY, JSON.stringify(sample));
     } catch {
       /* ignore */
     }
     set({ lastSample: sample });
-    if (await postSample(sample)) {
+    const sent = await postSample(sample);
+    log("share.result", { sent, enemy: sample.enemy, lead: sample.lead, result: sample.result }, sent ? "info" : "warn");
+    if (sent) {
       ids.set(battleId, content);
       writeIds(ids);
     }

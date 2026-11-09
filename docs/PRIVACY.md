@@ -13,6 +13,12 @@ are **never** sent to the app's makers. You can switch the on-device reading off
 - Your API keys live in your computer's keychain.
 - Your History, playbook and settings live in the app's storage on your computer. **Delete all** in History clears it.
 
+## The diagnostic log
+
+The app keeps a small log of what it did (which service answered, what failed, what was repaired) in its log folder, so problems
+can be diagnosed from text. It never contains API keys, screenshots, coordinates, the server number or player names, and nothing
+sends it anywhere: you can copy it yourself (Settings, or **Copy debug info**) if you want help. Switch it off in Settings.
+
 ## Anonymous community stats
 
 This is **on by default** so everyone's advice can get better. You can switch it off any time in

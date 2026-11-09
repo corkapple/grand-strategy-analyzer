@@ -314,6 +314,74 @@ fn bridge_start(app: AppHandle, state: State<Bridge>) -> Result<(), String> {
     start_bridge(&app, &state)
 }
 
+// ---------------------------------------------------------------------------
+// Diagnostic log: one JSON line per event in the app's log folder. It stays on this computer.
+// ---------------------------------------------------------------------------
+
+const LOG_MAX_BYTES: u64 = 1_000_000;
+
+fn log_file(app: &AppHandle) -> Result<PathBuf, String> {
+    let dir = app.path().app_log_dir().map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    Ok(dir.join("gsa.log"))
+}
+
+/// Appends one line, replacing the file with a fresh one first if it has grown past `max` bytes.
+fn append_line(path: &Path, line: &str, max: u64) -> Result<(), String> {
+    use std::io::Write;
+    if line.len() > 8000 {
+        return Ok(()); // never write a huge entry
+    }
+    if std::fs::metadata(path).map(|m| m.len() > max).unwrap_or(false) {
+        let _ = std::fs::rename(path, path.with_file_name("gsa.old.log"));
+    }
+    let mut f = std::fs::OpenOptions::new().create(true).append(true).open(path).map_err(|e| e.to_string())?;
+    writeln!(f, "{line}").map_err(|e| e.to_string())
+}
+
+/// The last `max_bytes` of the file, starting at a whole line.
+fn tail_of(path: &Path, max_bytes: usize) -> Result<String, String> {
+    use std::io::{Read, Seek, SeekFrom};
+    let Ok(mut f) = std::fs::File::open(path) else { return Ok(String::new()) };
+    let len = f.metadata().map(|m| m.len()).unwrap_or(0);
+    let start = len.saturating_sub(max_bytes as u64);
+    f.seek(SeekFrom::Start(start)).map_err(|e| e.to_string())?;
+    let mut buf = Vec::new();
+    f.read_to_end(&mut buf).map_err(|e| e.to_string())?;
+    let text = String::from_utf8_lossy(&buf).into_owned();
+    Ok(if start > 0 { text.split_once('\n').map(|x| x.1.to_string()).unwrap_or_default() } else { text })
+}
+
+#[tauri::command]
+fn log_append(app: AppHandle, line: String) -> Result<(), String> {
+    append_line(&log_file(&app)?, &line, LOG_MAX_BYTES)
+}
+
+#[tauri::command]
+fn log_tail(app: AppHandle, max_bytes: usize) -> Result<String, String> {
+    tail_of(&log_file(&app)?, max_bytes)
+}
+
+#[tauri::command]
+fn log_clear(app: AppHandle) -> Result<(), String> {
+    let path = log_file(&app)?;
+    let _ = std::fs::remove_file(path.with_file_name("gsa.old.log"));
+    std::fs::write(path, "").map_err(|e| e.to_string())
+}
+
+/// Shows the log folder in Finder / Explorer.
+#[tauri::command]
+fn log_reveal(app: AppHandle) -> Result<(), String> {
+    let dir = log_file(&app)?.parent().map(Path::to_path_buf).ok_or("no log folder")?;
+    #[cfg(target_os = "macos")]
+    let mut cmd = Command::new("open");
+    #[cfg(target_os = "windows")]
+    let mut cmd = Command::new("explorer");
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    let mut cmd = Command::new("xdg-open");
+    cmd.arg(dir).spawn().map(|_| ()).map_err(|e| e.to_string())
+}
+
 /// Test hook (only active when GSA_UPDATE_TEST_ENDPOINT is set): checks that URL for an update, downloads it,
 /// verifies its signature, installs it and restarts, writing progress to a log file. It lets the whole update
 /// path be verified on a copy of the app without clicking through the UI.
@@ -371,7 +439,7 @@ pub fn run() {
         .plugin(tauri_plugin_process::init());
     builder
         .manage(Bridge::default())
-        .invoke_handler(tauri::generate_handler![secret_set, secret_get, bridge_start, open_chat, ocr_native])
+        .invoke_handler(tauri::generate_handler![secret_set, secret_get, bridge_start, open_chat, ocr_native, log_append, log_tail, log_clear, log_reveal])
         .setup(|app| {
             // Test hook: lets the packaged app be verified without clicking through the UI.
             if std::env::var_os("GSA_BRIDGE_AUTOSTART").is_some() {
@@ -400,6 +468,30 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn log_file_appends_rotates_and_tails_whole_lines() {
+        let dir = std::env::temp_dir().join(format!("gsa-log-test-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("gsa.log");
+        for i in 0..5 {
+            append_line(&path, &format!("{{\"n\":{i}}}"), 1_000_000).unwrap();
+        }
+        let all = tail_of(&path, 10_000).unwrap();
+        assert_eq!(all.lines().count(), 5);
+        // A small tail starts at a whole line, never in the middle of one.
+        let tail = tail_of(&path, 12).unwrap();
+        assert!(tail.lines().all(|l| l.starts_with('{') && l.ends_with('}')), "got {tail:?}");
+        assert_eq!(tail.lines().last(), Some("{\"n\":4}"));
+        // Past the size limit the file is replaced, the old one kept.
+        append_line(&path, "{\"n\":5}", 10).unwrap();
+        assert_eq!(tail_of(&path, 10_000).unwrap().lines().count(), 1);
+        assert!(dir.join("gsa.old.log").exists());
+        // An oversized line is refused rather than written.
+        append_line(&path, &"x".repeat(9000), 1_000_000).unwrap();
+        assert_eq!(tail_of(&path, 10_000).unwrap().lines().count(), 1);
+        std::fs::remove_dir_all(dir).ok();
+    }
 
     /// Touches the real keychain with a throwaway account and removes it again.
     #[test]

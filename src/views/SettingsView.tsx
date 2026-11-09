@@ -6,6 +6,9 @@ import { SYSTEM_PROMPT } from "@/lib/prompt";
 import { DEFAULT_STRATEGY } from "@/lib/strategy";
 import { COMMUNITY_URL } from "@/lib/community/config";
 import { useCommunity } from "@/store/community";
+import { invoke } from "@tauri-apps/api/core";
+import { clearMemoryLog, recentLogText } from "@/lib/log";
+import { copyText } from "@/lib/providers/clipboard";
 import { CURRENT_VERSION, useUpdater } from "@/store/updater";
 import { useSettings } from "@/store/settings";
 
@@ -223,6 +226,8 @@ export default function SettingsView() {
 
       <UpdateSettings />
 
+      <DiagnosticsSettings />
+
       <CommunitySettings />
 
       <section className="card">
@@ -369,6 +374,55 @@ function UpdateSettings() {
       </label>
       <p className="text-xs text-zinc-500">
         Updates are signed. The app checks the signature with a key built into it and installs nothing that doesn't match.
+      </p>
+    </section>
+  );
+}
+
+function DiagnosticsSettings() {
+  const s = useSettings();
+  const [msg, setMsg] = useState("");
+  const desktop = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+  return (
+    <section className="card space-y-2">
+      <div className="flex flex-wrap items-center gap-3 text-sm">
+        <span className="font-medium">Diagnostic log</span>
+        <button
+          className="btn"
+          onClick={async () => {
+            const text = await recentLogText();
+            await copyText(text);
+            setMsg(`Copied ${text.split("\n").length} lines. Paste them when asking for help.`);
+          }}
+        >
+          Copy recent log
+        </button>
+        {desktop && (
+          <button className="btn" onClick={() => void invoke("log_reveal").catch((e) => setMsg(String(e)))}>
+            Open log folder
+          </button>
+        )}
+        <button
+          className="btn"
+          onClick={async () => {
+            clearMemoryLog();
+            if (desktop) await invoke("log_clear").catch(() => undefined);
+            setMsg("Log cleared.");
+          }}
+        >
+          Clear log
+        </button>
+        {msg && <span className="text-xs text-zinc-400">{msg}</span>}
+      </div>
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" checked={s.keepLog} onChange={(e) => s.setKeepLog(e.target.checked)} />
+        Keep a diagnostic log on this computer
+      </label>
+      <p className="text-xs text-zinc-500">
+        It records what the app did (which service answered, what failed and why, what numbers were repaired) so a problem can be
+        fixed from a few lines of text. It never contains your API keys, screenshots, coordinates, server number or player names,
+        and it is never sent anywhere unless you paste it yourself. After an analysis, <b>Copy debug info</b> next to the Analyze
+        button copies just that run.
       </p>
     </section>
   );

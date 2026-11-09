@@ -3,6 +3,7 @@ import AnalyzerView from "./views/AnalyzerView";
 import HistoryView from "./views/HistoryView";
 import KnowledgeView from "./views/KnowledgeView";
 import SettingsView from "./views/SettingsView";
+import { log, setLogEnabled } from "./lib/log";
 import { useCommunity } from "./store/community";
 import { useHistory } from "./store/history";
 import { useKnowledge } from "./store/knowledge";
@@ -23,6 +24,31 @@ export default function App({ initialView = "analyzer" }: { initialView?: View }
       void useCommunity.getState().loadStats();
       void useCommunity.getState().flush();
     })();
+  }, []);
+
+  // Diagnostic log: record start-up and any crash, and honour the on/off setting.
+  useEffect(() => {
+    setLogEnabled(useSettings.getState().keepLog);
+    const unsub = useSettings.subscribe((s) => setLogEnabled(s.keepLog));
+    const st = useSettings.getState();
+    log("app.start", {
+      main: st.activeProvider,
+      localFirst: st.localFirst,
+      fallback: st.fallbackEnabled ? st.fallbackProvider : "off",
+      autoFallback: st.autoFallback,
+      share: st.shareResults,
+      keychain: st.keychain,
+      keysSet: Object.entries(st.providers).filter(([, c]) => c.apiKey?.trim()).map(([id]) => id),
+    });
+    const onError = (e: ErrorEvent) => log("app.error", { message: e.message, at: `${e.filename ?? ""}:${e.lineno ?? ""}` }, "error");
+    const onRejection = (e: PromiseRejectionEvent) => log("app.unhandled_rejection", { message: String(e.reason?.message ?? e.reason) }, "error");
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onRejection);
+    return () => {
+      unsub();
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onRejection);
+    };
   }, []);
 
   // Look for a newer version of the app itself (installed with one click, no download page).

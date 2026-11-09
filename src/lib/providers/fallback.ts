@@ -1,3 +1,4 @@
+import { log } from "../log";
 import { getProvider } from "./registry";
 import { ProviderError, type ProviderConfig, type ProviderId, type VisionRequest, type VisionResponse } from "./types";
 
@@ -76,8 +77,11 @@ export async function analyzeWithFallback(chain: Candidate[], req: VisionRequest
     const why = unusable(c);
     if (why) {
       skipped.push(`${getProvider(c.id).label}: ${why}`);
+      log("provider.skip", { provider: c.id, why });
       continue;
     }
+    const started = Date.now();
+    log("provider.try", { provider: c.id, strict: c.config.extra?.strict, images: req.images.length });
     try {
       let res: VisionResponse;
       try {
@@ -85,15 +89,18 @@ export async function analyzeWithFallback(chain: Candidate[], req: VisionRequest
       } catch (first) {
         // A busy provider (503) usually answers a moment later.
         if (!isOverload(first) || req.signal?.aborted) throw first;
+        log("provider.retry", { provider: c.id, why: "overloaded (5xx)" });
         await sleep(retry.delayMs);
         res = await getProvider(c.id).analyze(req, c.config);
       }
+      log("provider.ok", { provider: c.id, model: res.model, ms: Date.now() - started, note: res.note });
       return skipped.length || c !== chain[0]
         ? { ...res, note: [...skipped, `answered by ${getProvider(c.id).label}`, res.note].filter(Boolean).join("\n") }
         : res;
     } catch (e) {
       if (req.signal?.aborted) throw e;
       lastError = e;
+      log("provider.fail", { provider: c.id, ms: Date.now() - started, status: (e as { status?: number }).status, message: brief(e), retryable: isRetryable(e) }, "warn");
       if (!isRetryable(e)) throw e;
       skipped.push(`${getProvider(c.id).label}: ${brief(e)}`);
     }
