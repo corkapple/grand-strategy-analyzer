@@ -11,6 +11,7 @@ export type ProviderId =
   | "github"
   | "mistral"
   | "mesh"
+  | "puter"
   | "local"
   | "deepseek"
   | "openai"

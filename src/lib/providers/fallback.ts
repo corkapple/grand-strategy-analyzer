@@ -17,6 +17,7 @@ export function isRetryable(e: unknown): boolean {
 export function unusable(c: Candidate): string | null {
   if (c.id === "browser" || c.id === "clipboard") return "needs manual steps";
   const p = getProvider(c.id);
+  if (c.id === "puter" && !c.config.extra?.signedIn) return "not signed in to Puter (Settings)";
   if (p.capabilities.requiresApiKey && !c.config.apiKey?.trim()) return `no API key for ${p.label}`;
   return null;
 }
@@ -51,6 +52,7 @@ export function fallbackCandidates(s: {
   if (s.fallbackEnabled) {
     add(s.fallbackProvider);
     if (s.autoFallback !== false) FREE_TIER.forEach(add);
+    add("puter"); // no key: used once you have signed in to Puter
   }
   if (s.meshGuides !== false) add("mesh");
   return out;

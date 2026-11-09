@@ -5,6 +5,7 @@ import { gemini } from "./gemini";
 import { deepseek, githubModels, groq, lmstudio, mesh, mistral, openai, openrouter } from "./openaiCompatible";
 import { localReader } from "./localReader";
 import { ollama } from "./ollama";
+import { puter } from "./puter";
 import type { LLMProvider, ProviderConfig, ProviderId } from "./types";
 
 export const PROVIDER_LIST: LLMProvider[] = [
@@ -14,6 +15,7 @@ export const PROVIDER_LIST: LLMProvider[] = [
   githubModels,
   mistral,
   mesh,
+  puter,
   deepseek,
   openai,
   anthropic,

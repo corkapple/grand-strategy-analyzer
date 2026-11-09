@@ -8,6 +8,7 @@ import { COMMUNITY_URL } from "@/lib/community/config";
 import { useCommunity } from "@/store/community";
 import { invoke } from "@tauri-apps/api/core";
 import { inTauri } from "@/lib/secrets";
+import { signInToPuter } from "@/lib/providers/puter";
 import { clearMemoryLog, recentLogText } from "@/lib/log";
 import { copyText } from "@/lib/providers/clipboard";
 import { CURRENT_VERSION, useUpdater } from "@/store/updater";
@@ -230,6 +231,7 @@ export default function SettingsView() {
         </p>
       </section>
 
+      <PuterSettings />
       {inTauri && <UpdateSettings />}
 
       <DiagnosticsSettings />
@@ -348,6 +350,47 @@ function CommunitySettings() {
           {last ? JSON.stringify(last, null, 2) : "Nothing has been sent yet."}
         </pre>
       )}
+    </section>
+  );
+}
+
+function PuterSettings() {
+  const s = useSettings();
+  const cfg = s.providers.puter ?? { extra: {} };
+  const signedIn = !!cfg.extra?.signedIn;
+  const [msg, setMsg] = useState<string | null>(null);
+  return (
+    <section className="card space-y-2">
+      <div className="flex flex-wrap items-center gap-3 text-sm">
+        <span className="font-medium">Free backup AI with no API key (Puter)</span>
+        {signedIn ? <span className="text-green-400">Signed in. It is used when your other AIs are out of quota.</span> : <span className="text-zinc-400">Not signed in.</span>}
+        <button
+          className="btn"
+          onClick={async () => {
+            setMsg("Opening Puter's sign-in window…");
+            try {
+              const ok = await signInToPuter();
+              s.updateProvider("puter", { extra: { signedIn: ok ? "1" : "" } });
+              setMsg(ok ? "Signed in." : "Sign-in was not completed.");
+            } catch (e) {
+              setMsg(String((e as Error)?.message ?? e));
+            }
+          }}
+        >
+          {signedIn ? "Sign in again" : "Sign in to Puter"}
+        </button>
+        {signedIn && (
+          <button className="btn" onClick={() => s.updateProvider("puter", { extra: { signedIn: "" } })}>
+            Turn off
+          </button>
+        )}
+        {msg && <span className="text-xs text-zinc-400">{msg}</span>}
+      </div>
+      <p className="text-xs text-zinc-500">
+        Puter gives free AI that can read screenshots without any API key. You sign in once with a free Puter account; that account pays from
+        its own free monthly allowance. When on, your screenshots can be sent to Puter and the model's vendor if your other AIs fail, so leave
+        it off if you would rather not. Model: <input className="input inline w-64 py-0" value={cfg.model ?? ""} onChange={(e) => s.updateProvider("puter", { model: e.target.value })} />
+      </p>
     </section>
   );
 }
