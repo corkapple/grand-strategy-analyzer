@@ -5,7 +5,7 @@ name: Web app
 on:
   push:
     branches: [main]
-    paths: ["src/**", "public/**", "index.html", "vite.config.ts", "package.json", ".github/workflows/pages.yml"]
+    paths: ["scripts/prepare-web-ocr.mjs", "src/**", "public/**", "index.html", "vite.config.ts", "package.json", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions:
@@ -30,6 +30,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: node scripts/prepare-web-ocr.mjs
       - run: npm test
       - run: npm run build
         env:
