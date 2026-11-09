@@ -13,7 +13,7 @@ import {
 interface ChatCompletion {
   /** The model that actually answered (OpenRouter's auto-router reports the one it picked). */
   model?: string;
-  choices?: { message?: { content?: string | null } }[];
+  choices?: { message?: { content?: string | null; reasoning_content?: string | null } }[];
   usage?: { prompt_tokens?: number; completion_tokens?: number };
 }
 
@@ -26,6 +26,8 @@ export interface OpenAICompatibleSpec {
   capabilities: ProviderCapabilities;
   /** Request `response_format: json_object` (not every server supports it). */
   jsonMode?: boolean;
+  /** Output token cap (reasoning models spend part of it thinking, so give them room). */
+  maxTokens?: number;
   extraHeaders?: Record<string, string>;
 }
 
@@ -67,16 +69,20 @@ export function createOpenAICompatible(
         { role: "system", content: req.systemPrompt },
         {
           role: "user",
-          content: [
-            { type: "text", text: req.userPrompt },
-            ...req.images.map((img) => ({
-              type: "image_url",
-              image_url: { url: `data:${img.mimeType};base64,${img.base64}` },
-            })),
-          ],
+          // Text-only servers want a plain string.
+          content: req.images.length
+            ? [
+                { type: "text", text: req.userPrompt },
+                ...req.images.map((img) => ({
+                  type: "image_url",
+                  image_url: { url: `data:${img.mimeType};base64,${img.base64}` },
+                })),
+              ]
+            : req.userPrompt,
         },
       ],
     };
+    if (spec.maxTokens) body.max_tokens = spec.maxTokens;
     if (spec.jsonMode) body.response_format = { type: "json_object" };
 
     let data: ChatCompletion;
@@ -106,8 +112,16 @@ export function createOpenAICompatible(
       }
       throw e;
     }
-    const text = data.choices?.[0]?.message?.content;
-    if (!text) throw new ProviderError("Empty response from model.", spec.id);
+    const msg = data.choices?.[0]?.message;
+    const text = msg?.content;
+    if (!text) {
+      throw new ProviderError(
+        msg?.reasoning_content
+          ? "The model used its whole answer budget thinking and gave no answer. Try again."
+          : "Empty response from model.",
+        spec.id,
+      );
+    }
     return {
       status: "complete",
       text,
@@ -238,5 +252,72 @@ export const lmstudio = createOpenAICompatible({
     local: true,
     notes:
       "LM Studio defaults to :1234. LocalAI defaults to :8080. Load a vision-capable model first.",
+  },
+});
+
+export const groq = createOpenAICompatible({
+  id: "groq",
+  label: "Groq (free tier)",
+  group: "free-api",
+  defaultBaseUrl: "https://api.groq.com/openai/v1",
+  defaultModel: "meta-llama/llama-4-scout-17b-16e-instruct",
+  capabilities: {
+    vision: true,
+    requiresApiKey: true,
+    local: false,
+    notes:
+      "Free key at console.groq.com/keys. Fast, with daily limits. Groq changes its model list: if you get a 'model not found' error, click Test connection to see the current models and type a vision model's name in Model.",
+  },
+});
+
+export const githubModels = createOpenAICompatible({
+  id: "github",
+  label: "GitHub Models (free, with a GitHub token)",
+  group: "free-api",
+  defaultBaseUrl: "https://models.github.ai/inference",
+  defaultModel: "openai/gpt-4o-mini",
+  capabilities: {
+    vision: true,
+    requiresApiKey: true,
+    local: false,
+    notes:
+      "Free for GitHub accounts with a small daily allowance. Create a token at github.com/settings/personal-access-tokens (fine-grained, permission 'Models: read') and paste it as the API key. Not your GitHub password.",
+  },
+});
+
+export const mistral = createOpenAICompatible({
+  id: "mistral",
+  label: "Mistral (free Experiment plan)",
+  group: "free-api",
+  defaultBaseUrl: "https://api.mistral.ai/v1",
+  defaultModel: "mistral-small-latest",
+  capabilities: {
+    vision: true,
+    requiresApiKey: true,
+    local: false,
+    notes:
+      "Free key at console.mistral.ai (Experiment plan). The free plan may use your requests to improve Mistral's models. If images are rejected, set a vision model such as pixtral-12b-2409 in Model.",
+  },
+});
+
+/**
+ * The community-run Mesh LLM network (github.com/Mesh-LLM/mesh-llm). No account or key.
+ * Its public models are text-only and run on strangers' computers, so it is used only for
+ * reading public guide pages, never for your screenshots.
+ */
+export const mesh = createOpenAICompatible({
+  id: "mesh",
+  label: "Mesh LLM public network (no key, text only)",
+  group: "free-api",
+  defaultBaseUrl: "https://public.meshllm.cloud/v1",
+  defaultModel: "unsloth/Qwen3-8B-GGUF:Q4_K_M",
+  maxTokens: 6000,
+  capabilities: {
+    vision: false,
+    textOnly: true,
+    requiresApiKey: false,
+    local: false,
+    notes:
+      "Community computers, no account. Text only, so it can read guide pages but not screenshots. Whatever you send is visible to the volunteers serving the model, so the app uses it only for public guide text.",
   },
 });

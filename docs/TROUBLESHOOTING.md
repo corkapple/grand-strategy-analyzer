@@ -16,6 +16,11 @@ happens, open **Terminal** and run this, then try again:
 xattr -dr com.apple.quarantine "/Applications/Grand Strategy Analyzer.app"
 ```
 
+## Every provider failed
+
+Add more free providers in **Settings** (see [Get a free key](FREE-KEY.md#more-free-options-extra-backups)). The app tries each
+one you added a key for. As a last resort use **Finish in a web chat instead**.
+
 ## The Mac keeps asking for my password (Keychain)
 
 It is asking permission to read your saved key. Click **Always Allow**. You may see it again after an update.

@@ -7,6 +7,10 @@
 export type ProviderId =
   | "gemini"
   | "openrouter"
+  | "groq"
+  | "github"
+  | "mistral"
+  | "mesh"
   | "deepseek"
   | "openai"
   | "anthropic"
@@ -58,6 +62,8 @@ export interface ProviderCapabilities {
   vision: boolean;
   requiresApiKey: boolean;
   local: boolean;
+  /** Cannot read images; only used for text jobs such as reading guides. */
+  textOnly?: boolean;
   /** Needs a human step (clipboard mode). */
   manual?: boolean;
   /** Shown in the settings drawer under the provider. */

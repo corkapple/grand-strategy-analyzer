@@ -193,6 +193,17 @@ export default function SettingsView() {
             ))}
           </select>
         </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={s.autoFallback} onChange={(e) => s.setAutoFallback(e.target.checked)} />
+          Then also try my other free providers that have a key (Gemini, OpenRouter, Groq, GitHub Models, Mistral)
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={s.meshGuides} onChange={(e) => s.setMeshGuides(e.target.checked)} />
+          Use the public Mesh LLM network (no key) as a last resort for reading game guides
+        </label>
+        <p className="text-xs text-zinc-500">
+          Mesh runs on volunteers' computers and only reads public guide text. It never receives your screenshots.
+        </p>
         <p className="text-xs text-zinc-500">
           Your screenshots and guide text are sent to the second provider only when the main one fails. It needs its
           own key under Settings → Provider. Gemini's free tier allows only a small number of requests per day per

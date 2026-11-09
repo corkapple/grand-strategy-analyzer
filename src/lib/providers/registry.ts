@@ -2,13 +2,17 @@ import { anthropic } from "./anthropic";
 import { browserBridge } from "./browserBridge";
 import { clipboardFallback } from "./clipboard";
 import { gemini } from "./gemini";
-import { deepseek, lmstudio, openai, openrouter } from "./openaiCompatible";
+import { deepseek, githubModels, groq, lmstudio, mesh, mistral, openai, openrouter } from "./openaiCompatible";
 import { ollama } from "./ollama";
 import type { LLMProvider, ProviderConfig, ProviderId } from "./types";
 
 export const PROVIDER_LIST: LLMProvider[] = [
   gemini,
   openrouter,
+  groq,
+  githubModels,
+  mistral,
+  mesh,
   deepseek,
   openai,
   anthropic,

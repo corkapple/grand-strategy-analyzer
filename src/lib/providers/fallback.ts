@@ -20,16 +20,39 @@ export function unusable(c: Candidate): string | null {
   return null;
 }
 
-/** The configured fallback, if it is usable and different from the main provider. */
+/**
+ * Providers with a free tier. After the chosen second provider, any of these that has a key is tried
+ * too, so one provider running out does not stop the app. Paid ones are never added automatically.
+ */
+export const FREE_TIER: ProviderId[] = ["gemini", "openrouter", "groq", "github", "mistral"];
+
+/**
+ * Fallbacks, in order: the chosen second provider, then your other free providers that have a key,
+ * then (for text jobs such as reading guides) the keyless Mesh network. Mesh is skipped
+ * automatically whenever screenshots are involved.
+ */
 export function fallbackCandidates(s: {
   activeProvider: ProviderId;
   providers: Record<ProviderId, ProviderConfig>;
   fallbackEnabled: boolean;
   fallbackProvider: ProviderId;
+  /** Also try every other free provider that has a key (default on). */
+  autoFallback?: boolean;
+  /** Use the public Mesh network for reading public guide text (default on). */
+  meshGuides?: boolean;
 }): Candidate[] {
-  if (!s.fallbackEnabled || s.fallbackProvider === s.activeProvider) return [];
-  const c = { id: s.fallbackProvider, config: s.providers[s.fallbackProvider] };
-  return unusable(c) ? [] : [c];
+  const out: Candidate[] = [];
+  const add = (id: ProviderId) => {
+    if (id === s.activeProvider || out.some((c) => c.id === id)) return;
+    const c = { id, config: s.providers[id] ?? {} };
+    if (!unusable(c)) out.push(c);
+  };
+  if (s.fallbackEnabled) {
+    add(s.fallbackProvider);
+    if (s.autoFallback !== false) FREE_TIER.forEach(add);
+  }
+  if (s.meshGuides !== false) add("mesh");
+  return out;
 }
 
 /**
@@ -40,6 +63,8 @@ export async function analyzeWithFallback(chain: Candidate[], req: VisionRequest
   const skipped: string[] = [];
   let lastError: unknown;
   for (const c of chain) {
+    // A text-only provider cannot read screenshots; skip it quietly for those requests.
+    if (req.images.length && getProvider(c.id).capabilities.textOnly) continue;
     const why = unusable(c);
     if (why) {
       skipped.push(`${getProvider(c.id).label}: ${why}`);

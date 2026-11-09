@@ -79,9 +79,77 @@ describe("fallbackCandidates", () => {
     return p;
   };
   it("returns the fallback only when enabled, keyed, and different from the main provider", () => {
-    expect(fallbackCandidates({ ...base, providers: withKeys("k") })).toHaveLength(1);
-    expect(fallbackCandidates({ ...base, providers: withKeys("") })).toHaveLength(0);
-    expect(fallbackCandidates({ ...base, providers: withKeys("k"), fallbackEnabled: false })).toHaveLength(0);
-    expect(fallbackCandidates({ ...base, providers: withKeys("k"), activeProvider: "openrouter" })).toHaveLength(0);
+    const off = { meshGuides: false };
+    expect(fallbackCandidates({ ...base, ...off, providers: withKeys("k") })).toHaveLength(1);
+    expect(fallbackCandidates({ ...base, ...off, providers: withKeys("") })).toHaveLength(0);
+    expect(fallbackCandidates({ ...base, ...off, providers: withKeys("k"), fallbackEnabled: false })).toHaveLength(0);
+    expect(fallbackCandidates({ ...base, ...off, providers: withKeys("k"), activeProvider: "openrouter" })).toHaveLength(0);
+  });
+});
+
+describe("free-provider chain and Mesh", () => {
+  const base = () => {
+    const providers = defaultProviderConfigs();
+    return {
+      activeProvider: "gemini" as const,
+      providers,
+      fallbackEnabled: true,
+      fallbackProvider: "openrouter" as const,
+    };
+  };
+  const withKeys = (keys: Record<string, string>) => {
+    const s = base();
+    for (const [id, k] of Object.entries(keys)) (s.providers as Record<string, { apiKey?: string }>)[id] = { ...(s.providers as Record<string, object>)[id], apiKey: k };
+    return s;
+  };
+  const ids = (s: ReturnType<typeof base>, extra: object = {}) => fallbackCandidates({ ...s, ...extra }).map((c) => c.id);
+
+  it("tries the chosen second provider, then every other free provider that has a key, then Mesh", () => {
+    const s = withKeys({ openrouter: "o", groq: "g", mistral: "m", anthropic: "paid", openai: "paid" });
+    expect(ids(s)).toEqual(["openrouter", "groq", "mistral", "mesh"]);
+  });
+  it("never adds paid providers on its own, and skips ones without a key", () => {
+    const s = withKeys({ openrouter: "o", openai: "k", anthropic: "k", deepseek: "k" });
+    expect(ids(s)).toEqual(["openrouter", "mesh"]);
+  });
+  it("can be limited to the single chosen provider, and Mesh can be switched off", () => {
+    const s = withKeys({ openrouter: "o", groq: "g" });
+    expect(ids(s, { autoFallback: false, meshGuides: false })).toEqual(["openrouter"]);
+  });
+  it("still offers Mesh for guide text when no second provider is configured", () => {
+    expect(ids(base())).toEqual(["mesh"]);
+  });
+
+  const mesh = { id: "mesh" as const, config: {} };
+  const meshReply = (content: string | null, reasoning?: string) =>
+    new Response(JSON.stringify({ model: "m", choices: [{ message: { content, reasoning_content: reasoning } }] }), { status: 200 });
+
+  it("skips the text-only Mesh quietly when screenshots are involved", async () => {
+    const calls = net({ gemini: quota, openrouter: orOk });
+    const img = { ...req, images: [{ base64: "AAAA", mimeType: "image/jpeg" }] };
+    const res = await analyzeWithFallback([GEMINI, mesh, OPENROUTER], img);
+    expect(res.text).toContain("or");
+    expect(res.note).not.toMatch(/mesh/i);
+    expect(calls).toEqual(["gemini", "openrouter"]);
+  });
+  it("answers text-only requests through Mesh and sends no key", async () => {
+    const seen: { url: string; headers: unknown; body: { messages: { content: unknown }[]; max_tokens?: number } }[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        seen.push({ url, headers: init?.headers, body: JSON.parse(String(init?.body)) });
+        return meshReply('{"facts":[]}');
+      }),
+    );
+    const res = await analyzeWithFallback([mesh], req);
+    expect(res.text).toBe('{"facts":[]}');
+    expect(seen[0].url).toBe("https://public.meshllm.cloud/v1/chat/completions");
+    expect(JSON.stringify(seen[0].headers)).not.toMatch(/authorization/i);
+    expect(typeof seen[0].body.messages[1].content).toBe("string"); // plain text, no image parts
+    expect(seen[0].body.max_tokens).toBeGreaterThan(1000); // room for a reasoning model to think and answer
+  });
+  it("explains when a reasoning model spends its whole budget thinking", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => meshReply(null, "Okay, the user wants...")));
+    await expect(analyzeWithFallback([mesh], req)).rejects.toThrow(/thinking/);
   });
 });

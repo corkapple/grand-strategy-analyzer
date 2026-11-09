@@ -35,5 +35,7 @@ The counter chart (what beats what) is fixed and cannot be changed by this data.
 
 ## Game guides
 
-If you use the **Knowledge** tab, the app downloads the guide pages in your list. Nothing from your own data is
-sent there.
+If you use the **Knowledge** tab, the app downloads the guide pages in your list and asks an AI service to read them.
+Nothing from your own data is included. If your AI services are out of requests, the app may use the public
+**Mesh LLM** network, which runs on volunteers' computers, to read the same public guide text. Your screenshots are
+**never** sent to Mesh. You can turn this off in **Settings → "Use the public Mesh LLM network…"**.

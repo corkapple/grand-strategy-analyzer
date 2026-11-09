@@ -57,6 +57,12 @@ interface SettingsState {
   shareNoticeSeen: boolean;
   setShareResults: (v: boolean) => void;
   dismissShareNotice: () => void;
+  /** Also try every other free provider that has a key. */
+  autoFallback: boolean;
+  /** Use the public Mesh network (text only, no key) for reading guides. */
+  meshGuides: boolean;
+  setAutoFallback: (v: boolean) => void;
+  setMeshGuides: (v: boolean) => void;
   setFallbackEnabled: (v: boolean) => void;
   setFallbackProvider: (id: ProviderId) => void;
   setSaveHistory: (v: boolean) => void;
@@ -77,6 +83,8 @@ const initial = () => ({
   myAssociates: 0,
   shareResults: true,
   shareNoticeSeen: false,
+  autoFallback: true,
+  meshGuides: true,
   fallbackEnabled: true,
   fallbackProvider: "openrouter" as ProviderId,
   knowledgeSources: DEFAULT_SOURCES,
@@ -166,6 +174,8 @@ export const useSettings = create<SettingsState>()(
       keychain: false,
       secretsReady: false,
       secretsError: null,
+      setAutoFallback: (autoFallback) => set({ autoFallback }),
+      setMeshGuides: (meshGuides) => set({ meshGuides }),
       setShareResults: (shareResults) => set({ shareResults, shareNoticeSeen: true }),
       dismissShareNotice: () => set({ shareNoticeSeen: true }),
       setFallbackEnabled: (fallbackEnabled) => set({ fallbackEnabled }),
@@ -225,6 +235,8 @@ export const useSettings = create<SettingsState>()(
         fallbackEnabled: s.fallbackEnabled,
         fallbackProvider: s.fallbackProvider,
         shareResults: s.shareResults,
+        autoFallback: s.autoFallback,
+        meshGuides: s.meshGuides,
         shareNoticeSeen: s.shareNoticeSeen,
         myAssociates: s.myAssociates,
         knowledgeSources: s.knowledgeSources,

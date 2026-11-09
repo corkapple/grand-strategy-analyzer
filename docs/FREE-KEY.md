@@ -28,6 +28,21 @@ OpenRouter offers several free models. It can be slower and busier, so it works 
 2. Click **Create Key** and copy it.
 3. In the app, open **Settings** and choose **OpenRouter (free tier)** under **Provider**. Paste the key and click **Test connection**.
 
+## More free options (extra backups)
+
+These are optional. Each gives the app another place to go when one service is busy. All of them work the same way:
+choose it under **Provider**, paste its key into **API key**, and click **Test connection**.
+
+> We have not been able to test every one of these with a real account, and free plans change often. If one says
+> "model not found", click **Test connection** to see the current models and type a vision-capable one into **Model**.
+
+- **Groq (free tier).** Get a key at **https://console.groq.com/keys**. It is very fast, with daily limits.
+- **GitHub Models (free for GitHub accounts).** Create a token at **https://github.com/settings/personal-access-tokens**
+  (a "fine-grained" token with the **Models: read** permission) and paste that token as the key. It is not your
+  password. It comes with a small daily allowance.
+- **Mistral (free Experiment plan).** Get a key at **https://console.mistral.ai**. The free plan may use your requests to
+  improve their models.
+
 ## Set up an automatic backup (recommended)
 
 If one service is busy or out of requests, the app can switch to the other by itself.
@@ -36,6 +51,15 @@ If one service is busy or out of requests, the app can switch to the other by it
 2. Choose the one you prefer as the main **Provider**.
 3. Tick **"If the main provider fails (quota, outage, timeout), try a second one automatically"** and pick the
    other one under **Second provider**.
+4. Leave **"Then also try my other free providers that have a key"** ticked. The app then goes down the list by itself:
+   your second provider, then any other free one you added a key for. It never uses a paid service by itself.
+
+## The Mesh LLM network (no key at all)
+
+[Mesh LLM](https://github.com/Mesh-LLM/mesh-llm) is a community network where volunteers share their computers' power. The
+app can use its public network **without any account or key**, but only for **reading game guides** in the Knowledge tab.
+It cannot read screenshots: the free models on the public network are text-only. Because volunteers' computers run the
+model, the app never sends your screenshots there. Only public guide text goes there. You can turn it off in Settings.
 
 ## Where does my key go?
 
