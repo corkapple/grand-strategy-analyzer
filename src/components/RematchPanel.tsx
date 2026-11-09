@@ -1,13 +1,20 @@
 import Dashboard from "@/components/Dashboard";
+import { pairBattles } from "@/lib/history";
 import { rematchAdvice } from "@/lib/rematch";
 import type { BattleReport, CombatReport } from "@/lib/schema";
 import { TROOP_LABEL, type StrategyConfig } from "@/lib/strategy";
+import { useHistory } from "@/store/history";
+import { useSettings } from "@/store/settings";
+import { useMemo } from "react";
 
 /**
  * After a battle: what to send next time against the enemy it faced. For a defeat this is the way to win it.
  * Without any idea of the enemy's mix the only safe advice is the default: a full Bikers raid.
  */
 export default function RematchPanel({ battle, enemy, config }: { battle: BattleReport; enemy: CombatReport | null; config: StrategyConfig }) {
+  const records = useHistory((s) => s.records);
+  const lossCap = useSettings((s) => s.lossCap);
+  const pairs = useMemo(() => pairBattles(records), [records]);
   if (!enemy) {
     const lost = battle.result === "defeat";
     return (
@@ -21,7 +28,7 @@ export default function RematchPanel({ battle, enemy, config }: { battle: Battle
       </section>
     );
   }
-  const advice = rematchAdvice(battle, enemy, config);
+  const advice = rematchAdvice(battle, enemy, config, { pairs, lossCap });
   return (
     <div className="space-y-3">
       <section className={`card space-y-1 text-sm ${advice.lost ? "border-red-500/60" : "border-green-500/60"}`}>
