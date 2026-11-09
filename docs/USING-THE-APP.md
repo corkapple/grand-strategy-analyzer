@@ -48,6 +48,10 @@ cost you. **Casualties reduced** are the ones the game saved you from.
 The app saves the result and pairs it with the recon of the same target. It then tells you what it learned, for example
 "Won with 0.2% losses".
 
+**After a battle: how to win next time.** Under the result the app shows what the enemy had and what to send. After a
+**defeat** it tells you whether you led with the wrong troops (and names the counter and the formation) or had the right matchup
+and simply too few associates. If it can't tell what the enemy had, it falls back to the default full Bikers raid.
+
 **No recon? That works too.** You can send just the victory mail together with its **Battle Details** screen. Battle Details
 shows the troops the enemy had, so the app uses that as the enemy mix, and the battle still counts in History, your playbook
 and the community stats (History marks it "from Battle Details"). Without Battle Details a battle on its own is still

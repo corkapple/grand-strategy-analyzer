@@ -295,9 +295,8 @@ export function parseBattleReport(text: string): BattleReport {
     );
   }
   // Troop types come from the row ORDER on Battle Details (Bruisers, Hitmen, Bikers), never from icons, which
-  // models confuse. The defender's formation names its main troop type and must agree with the biggest row.
-  const typeOfFormation = (f: string | null | undefined) =>
-    /bruiser/i.test(f ?? "") ? "bruisers" : /hitm/i.test(f ?? "") ? "hitmen" : /biker/i.test(f ?? "") ? "bikers" : null;
+  // models confuse. (The defender's formation name does NOT say what it mostly has: a "Bruiser - Square" defense
+  // was 83% Bikers in a real recon, so it is not used to second-guess the rows.)
   const troopNotes: string[] = [];
   for (const who of ["attacker", "defender"] as const) {
     const rows = b[who].troopRows;
@@ -311,14 +310,6 @@ export function parseBattleReport(text: string): BattleReport {
       continue;
     }
     const troops = { bruisers: rows[0], hitmen: rows[1], bikers: rows[2], mortars: 0 };
-    const keys = ["bruisers", "hitmen", "bikers"] as const;
-    const biggest = keys.reduce((m, k) => (troops[k] > troops[m] ? k : m), "bruisers" as (typeof keys)[number]);
-    const named = typeOfFormation(b[who].formation);
-    if (who === "defender" && named && named !== biggest && troops[biggest] >= sum * 0.5) {
-      b[who] = { ...b[who], troops: null };
-      troopNotes.push(`The enemy's formation says ${named} but its biggest troop row is ${biggest}; the troop mix was not used.`);
-      continue;
-    }
     b[who] = { ...b[who], troops };
   }
 

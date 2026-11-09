@@ -5,6 +5,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import App from "./App";
 import BattleDashboard from "./components/BattleDashboard";
 import Dashboard from "./components/Dashboard";
+import RematchPanel from "./components/RematchPanel";
 import type { BattleRecord, ReconRecord } from "./lib/history";
 import type { KnowledgeEntry } from "./lib/knowledge";
 import { parseBattleReport, parseCombatReport } from "./lib/schema";
@@ -110,5 +111,27 @@ describe("screens render without crashing", () => {
       }),
     );
     await expect(render(<Dashboard report={zero} config={DEFAULT_STRATEGY} />)).resolves.toContain("Counter composition");
+  });
+});
+
+describe("after a battle: how to win next time", () => {
+  const defeat = parseBattleReport(
+    JSON.stringify({
+      result: "defeat",
+      attacker: { formation: "Bruiser - Square", totalAssociates: 1022831, wounded: 3720, dead: 2477, alive: 1016634, casualtiesReduced: 613796, losses: 619993, troopRows: [10, 12, 1022809] },
+      defender: { formation: "Bruiser - Square", totalAssociates: 2250000, dead: 243256, alive: 2006744, losses: 243256 },
+    }),
+  );
+  it("shows the counter and the plan when the enemy's mix is known", async () => {
+    const mix = parseCombatReport(
+      JSON.stringify({ reportType: "recon", associates: { bruisers: 200000, hitmen: 1300000, bikers: 750000, mortars: 0, total: 2250000 }, traps: { total: 112500 }, wallDurability: { current: 1, max: 1 } }),
+    );
+    const html = await render(<RematchPanel battle={defeat} enemy={mix} config={DEFAULT_STRATEGY} />);
+    expect(html).toMatch(/You lost this fight/);
+    expect(html).toMatch(/counter to that is Bruisers/);
+  });
+  it("falls back to the full Bikers raid when the enemy is unknown", async () => {
+    const html = await render(<RematchPanel battle={defeat} enemy={null} config={DEFAULT_STRATEGY} />);
+    expect(html).toMatch(/full 100% Bikers raid/);
   });
 });

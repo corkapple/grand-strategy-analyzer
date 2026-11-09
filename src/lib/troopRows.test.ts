@@ -26,11 +26,11 @@ describe("troop types from the row order on Battle Details", () => {
     const pair = pairBattles([rec(b)])[0];
     expect(computeStrategy(pair.recon!.report).dominant).toBe("bruisers");
   });
-  it("does not use a mix that contradicts the enemy's formation (rows read in the wrong order)", () => {
-    const b = parseBattleReport(reply({ defender: { troopRows: [315500, 579200, 1355300] } }));
-    expect(b.defender.troops).toBeNull();
-    expect(b.notes).toMatch(/formation says bruisers/);
-    expect(syntheticRecon(rec(b))).toBeNull();
+  it("does NOT second-guess the rows with the enemy's formation: a Bruiser-formation defense can be mostly Hitmen", () => {
+    // Real data: a "Bruiser - Square" defense was 83% Bikers in the recon of the same target.
+    const b = parseBattleReport(reply({ defender: { troopRows: [315500, 1355300, 579200] } }));
+    expect(b.defender.troops).toEqual({ bruisers: 315500, hitmen: 1355300, bikers: 579200, mortars: 0 });
+    expect(syntheticRecon(rec(b))).not.toBeNull();
   });
   it("does not use rows that do not match the army size (lower tiers dominate)", () => {
     const b = parseBattleReport(reply({ defender: { troopRows: [1000, 500, 200] } }));

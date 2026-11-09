@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import BattleDashboard from "@/components/BattleDashboard";
 import Dashboard from "@/components/Dashboard";
 import DropZone from "@/components/DropZone";
@@ -17,6 +17,8 @@ import {
   type BattleReport,
   type CombatReport,
 } from "@/lib/schema";
+import RematchPanel from "@/components/RematchPanel";
+import { pairBattles } from "@/lib/history";
 import { useCommunity } from "@/store/community";
 import { useHistory } from "@/store/history";
 import { useSettings } from "@/store/settings";
@@ -52,6 +54,13 @@ export default function AnalyzerView() {
   }, [busy]);
 
   const provider = getProvider(activeProvider);
+  const records = useHistory((s) => s.records);
+  // The enemy this battle faced: a recon of the same target, or the mix read from its Battle Details screen.
+  const enemy = useMemo(() => {
+    if (!battle) return null;
+    const view = { id: "__view", kind: "battle" as const, createdAt: Date.now(), thumbs: [], report: battle };
+    return pairBattles([...records, view]).find((p) => p.battle.id === "__view")?.recon?.report ?? null;
+  }, [battle, records]);
 
   const reset = () => {
     setError(null);
@@ -319,6 +328,9 @@ export default function AnalyzerView() {
 
       {recon && <Dashboard report={recon} config={strategy} />}
       {battle && <BattleDashboard report={battle} />}
+      {battle && !recon && (
+        <RematchPanel battle={battle} enemy={enemy} config={strategy} />
+      )}
     </div>
   );
 }
