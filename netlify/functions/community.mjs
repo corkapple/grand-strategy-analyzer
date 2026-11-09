@@ -23,7 +23,7 @@ function authorized(req) {
   return !!token && (req.headers.get("authorization") ?? "") === `Bearer ${token}`;
 }
 
-export default async (req, context) => {
+async function handle(req, context) {
   const url = new URL(req.url);
   const store = getStore({ name: "gsa", consistency: "strong" });
 
@@ -96,6 +96,22 @@ export default async (req, context) => {
   }
 
   return json({ error: "not found" }, 404);
+}
+
+// The web version of the app calls this from another origin, so allow cross-origin posts and reads.
+const CORS = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET, POST, OPTIONS",
+  "access-control-allow-headers": "content-type",
+  "access-control-max-age": "86400",
+};
+
+export default async (req, context) => {
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
+  const res = await handle(req, context);
+  const headers = new Headers(res.headers);
+  for (const [k, v] of Object.entries(CORS)) headers.set(k, v);
+  return new Response(res.body, { status: res.status, headers });
 };
 
 export const config = { path: ["/v1/samples", "/v1/export", "/v1/stats"] };
