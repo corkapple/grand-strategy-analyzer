@@ -222,6 +222,8 @@ const battleSide = z.object({
   formation: z.string().nullish(),
   /** What the side actually fielded. Formation names do not say: Bikers use "Hitman - Square". */
   troops: troopMix,
+  /** Totals of the first three (tier-4) troop rows of Battle Details, top to bottom: Bruisers, Hitmen, Bikers. */
+  troopRows: z.array(count).nullish(),
   totalAssociates: count,
   wounded: count,
   dead: count,
@@ -292,6 +294,34 @@ export function parseBattleReport(text: string): BattleReport {
       "recon",
     );
   }
+  // Troop types come from the row ORDER on Battle Details (Bruisers, Hitmen, Bikers), never from icons, which
+  // models confuse. The defender's formation names its main troop type and must agree with the biggest row.
+  const typeOfFormation = (f: string | null | undefined) =>
+    /bruiser/i.test(f ?? "") ? "bruisers" : /hitm/i.test(f ?? "") ? "hitmen" : /biker/i.test(f ?? "") ? "bikers" : null;
+  const troopNotes: string[] = [];
+  for (const who of ["attacker", "defender"] as const) {
+    const rows = b[who].troopRows;
+    if (!rows || rows.length !== 3) continue;
+    const sum = rows[0] + rows[1] + rows[2];
+    const total = b[who].totalAssociates;
+    const who2 = who === "attacker" ? "your" : "the enemy's";
+    if (sum <= 0 || (total > 0 && (sum < total * 0.5 || sum > total * 1.15))) {
+      b[who] = { ...b[who], troops: null };
+      troopNotes.push(`The ${who2} troop rows on Battle Details do not match the army size, so the troop mix was not used.`);
+      continue;
+    }
+    const troops = { bruisers: rows[0], hitmen: rows[1], bikers: rows[2], mortars: 0 };
+    const keys = ["bruisers", "hitmen", "bikers"] as const;
+    const biggest = keys.reduce((m, k) => (troops[k] > troops[m] ? k : m), "bruisers" as (typeof keys)[number]);
+    const named = typeOfFormation(b[who].formation);
+    if (who === "defender" && named && named !== biggest && troops[biggest] >= sum * 0.5) {
+      b[who] = { ...b[who], troops: null };
+      troopNotes.push(`The enemy's formation says ${named} but its biggest troop row is ${biggest}; the troop mix was not used.`);
+      continue;
+    }
+    b[who] = { ...b[who], troops };
+  }
+
   // Check the model's numbers against the game's own arithmetic and repair what the totals prove wrong.
   const notes: string[] = [];
   for (const who of ["attacker", "defender"] as const) {
@@ -303,6 +333,7 @@ export function parseBattleReport(text: string): BattleReport {
       notes.push(`${who === "attacker" ? "Your side's" : "The defender's"} numbers do not add up; one of them may be misread.`);
     }
   }
+  notes.push(...troopNotes);
   if (notes.length) {
     const repaired = notes.every((n) => n.startsWith("Corrected"));
     // The model's own worry ("Dead differs from Losses") described the numbers we just fixed, so it is dropped.

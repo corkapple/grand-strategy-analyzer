@@ -67,11 +67,12 @@ Rules:
 - The title bar says e.g. "Successfully Defeated Lv. 8 Elite Police Station!": result = "victory", target.level = 8, target.name = "Elite Police Station". A defeat/failed title -> "defeat".
 - "timestamp" is the date/time at the top right, exactly as printed (e.g. "11-08 21:25").
 - Do not invent values. If a value is not visible use 0 (numbers) or null (text).
-- The Battle Details screen has a comparison table with one row per troop type and tier. The icon says the type
-  (blade/club = Bruisers, rifle = Hitmen, motorcycle = Bikers, mortar/rocket vehicle = Mortars) and the small digit is the tier.
-  For each side, add the "Total Associates" of all tiers of one type and put the sums in "troops". If the Battle Details
-  screen is not among the screenshots, use null for "troops". The troops of one side should add up to that side's totalAssociates;
-  re-check a row if they do not. Rows for traps, cars or helicopters are not troops.
+- The Battle Details screen has a comparison table. Its first two rows (a car and a helicopter) only show kills: ignore them.
+  Every further row is one troop type of one tier, top to bottom. Do NOT try to recognise the troop type from the icons.
+  For each side give "troopRows": the "Total Associates" numbers of the FIRST THREE troop rows after the car and helicopter
+  rows, in screen order, top to bottom, but only when all three are tier-4 rows (the small digit beside the icon is 4).
+  A "-" counts as 0. If the first three troop rows are not all tier 4, or the Battle Details screen is not among the
+  screenshots, use null.
 
 Crew Details mapping (attacker / defender):
 - "Formation" -> formation, text as printed (e.g. "Hitman - Wedge", "Bruiser - Square")
@@ -91,7 +92,7 @@ JSON shape:
   "timestamp": string|null,
   "location": { "server": number|null, "x": number|null, "y": number|null } | null,
   "target": { "name": string|null, "level": number|null } | null,
-  "attacker": { "formation": string|null, "troops": { "bruisers": number, "hitmen": number, "bikers": number, "mortars": number } | null, "totalAssociates": number, "wounded": number, "dead": number, "alive": number, "casualtiesReduced": number, "losses": number, "influence": number },
+  "attacker": { "formation": string|null, "troopRows": [number, number, number] | null, "totalAssociates": number, "wounded": number, "dead": number, "alive": number, "casualtiesReduced": number, "losses": number, "influence": number },
   "defender": { same fields as attacker },
   "traps": { "total": number, "requiresRepair": number, "destroyed": number, "remaining": number },
   "wallDurability": number,

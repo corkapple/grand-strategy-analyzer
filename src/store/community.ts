@@ -9,20 +9,25 @@ import { useSettings } from "@/store/settings";
 const SHARED_KEY = "gsa-shared-ids";
 const LAST_KEY = "gsa-last-shared";
 
-function readIds(): Set<string> {
+/** battle id -> fingerprint of the content that was sent. A battle is sent again only if its content changed. */
+function readIds(): Map<string, string> {
   try {
-    return new Set(JSON.parse(localStorage.getItem(SHARED_KEY) ?? "[]") as string[]);
+    const raw = JSON.parse(localStorage.getItem(SHARED_KEY) ?? "{}") as unknown;
+    // Older versions stored a plain list of ids: those were sent with unknown content.
+    return Array.isArray(raw) ? new Map((raw as string[]).map((id) => [id, ""])) : new Map(Object.entries(raw as Record<string, string>));
   } catch {
-    return new Set();
+    return new Map();
   }
 }
-function writeIds(ids: Set<string>) {
+function writeIds(ids: Map<string, string>) {
   try {
-    localStorage.setItem(SHARED_KEY, JSON.stringify([...ids].slice(-2000)));
+    localStorage.setItem(SHARED_KEY, JSON.stringify(Object.fromEntries([...ids].slice(-2000))));
   } catch {
     /* storage unavailable: worst case a battle is offered again */
   }
 }
+/** What makes two samples "the same battle result" (not the app version or date). */
+const contentOf = (s: Sample) => JSON.stringify({ ...s, app: "", day: "" });
 
 interface CommunityState {
   stats: CommunityStats | null;
@@ -51,10 +56,11 @@ export const useCommunity = create<CommunityState>((set, get) => ({
   shareBattle: async (battleId) => {
     if (!COMMUNITY_URL || !useSettings.getState().shareResults) return;
     const ids = readIds();
-    if (ids.has(battleId)) return;
     const pair = pairBattles(useHistory.getState().records).find((p) => p.battle.id === battleId);
     const sample = pair && buildSample(pair, APP_VERSION, new Date(), useSettings.getState().strategy.formations);
     if (!sample) return; // needs a matching recon to be useful; retried later if one arrives
+    const content = contentOf(sample);
+    if (ids.get(battleId) === content) return; // already sent exactly this
     try {
       localStorage.setItem(LAST_KEY, JSON.stringify(sample));
     } catch {
@@ -62,15 +68,14 @@ export const useCommunity = create<CommunityState>((set, get) => ({
     }
     set({ lastSample: sample });
     if (await postSample(sample)) {
-      ids.add(battleId);
+      ids.set(battleId, content);
       writeIds(ids);
     }
   },
   flush: async () => {
     if (!COMMUNITY_URL || !useSettings.getState().shareResults) return;
-    const ids = readIds();
     for (const p of pairBattles(useHistory.getState().records)) {
-      if (!ids.has(p.battle.id) && p.recon) await get().shareBattle(p.battle.id);
+      if (p.recon) await get().shareBattle(p.battle.id);
     }
   },
 }));

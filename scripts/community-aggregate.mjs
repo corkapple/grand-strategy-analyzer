@@ -36,8 +36,8 @@ export function enemyKey(e) {
   return "mixed";
 }
 
-/** Apps older than this counted the same battle more than once and could record the wrong lead troop. */
-export const MIN_APP = "0.1.14";
+/** Apps older than this counted the same battle more than once, or took the troop types from the AI's icon guesses. */
+export const MIN_APP = "0.1.15";
 const parts = (v) => String(v).split(/[.+-]/).slice(0, 3).map((n) => Number.parseInt(n, 10) || 0);
 export function versionAtLeast(app, min = MIN_APP) {
   const a = parts(app);
