@@ -196,3 +196,28 @@ export const details20: string[] = [
   "Nordri",
   "v. 100  |  65.2%  |  > 678  |  Modification Level"
 ];
+
+// A mail scrolled past its "Crew Details" bar, with the attacker's Dead value lost by the reader.
+export const mailScrolled: string[] = [
+  "Mail",
+  "Successfully Defeated Lv. 8 Police Station!  |  11-08 22:49",
+  "S:1 X:101 Y:201",
+  "OFFENSIVE VICTORY",
+  "217,078  |  Losses  |  1,600,638",
+  "-64,284\u0105\u0119\u017a\u0142  |  Influence  |  -57,698,738",
+  "Hitman - Square  |  Formation  |  Bruiser - Square",
+  "1,738,596  |  Total Associates  |  2,500,000",
+  "1,303  |  Wounded",
+  "Dead  |  1,600,63",
+  "214,911  |  Casualties Reduced 1",
+  "1,736,429  |  Alive  |  899,362\u0142",
+  "Total Traps  |  125,000",
+  "Requires Repair",
+  "Destroyed:  |  15,154",
+  "kemaining  |  109,846\u0142",
+  "Wall Defenses",
+  "Wall Durability  |  2,500,000",
+  "Damaged  |  2,500,000",
+  "Dx",
+  "Battle Analysis  |  Battle Details"
+];

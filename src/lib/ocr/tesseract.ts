@@ -61,7 +61,7 @@ async function prepare(img: ImageInput, factor: number): Promise<HTMLCanvasEleme
 
 export async function tesseractRows(img: ImageInput, scale: number): Promise<string[]> {
   const w = await getWorker();
-  const canvas = await prepare(img, scale === 1 ? 3 : 4);
+  const canvas = await prepare(img, 2 + scale); // 3x, 3.5x or 4x, so each pass sees different pixels
   const { data } = await w.recognize(canvas);
   return data.text
     .split("\n")

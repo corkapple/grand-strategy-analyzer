@@ -95,6 +95,14 @@ describe("parseBattleMail()", () => {
     expect(b.verified).toBe(false);
     expect(b.problems.join(" ")).toMatch(/your side/);
   });
+  it("reads a mail scrolled past its Crew Details bar, deriving the Dead values the reader lost", () => {
+    expect(classify(fx.mailScrolled)).toBe("mail");
+    const b = parseBattleMail(fx.mailScrolled);
+    expect(b.verified).toBe(true);
+    expect(b.attacker).toMatchObject({ totalAssociates: 1738596, wounded: 1303, dead: 864, alive: 1736429, casualtiesReduced: 214911, losses: 217078 });
+    expect(b.defender).toMatchObject({ totalAssociates: 2500000, wounded: 0, dead: 1600638, alive: 899362, losses: 1600638 });
+    expect(b.traps).toMatchObject({ total: 125000, destroyed: 15154, remaining: 109846 });
+  });
   it("derives a value the reader dropped from the identities (alive = total - wounded - dead)", () => {
     const rows = fx.mail3.filter((r) => !/Alive/.test(r));
     const b = parseBattleMail(rows);
@@ -118,7 +126,10 @@ const screens: Record<string, string[]> = { recon5: fx.recon5, mail3: fx.mail3, 
 /** A reader that returns the same text for both readings. */
 const steady = () => setOcrEngine(async (i) => screens[i.base64]);
 /** A reader whose second reading flips a digit in the coordinates, as real readers sometimes do. */
-const flaky = () => setOcrEngine(async (i, scale) => (scale === 1 ? screens[i.base64] : screens[i.base64].map((r) => r.replace("X:101", "X:151"))));
+const flaky = () =>
+  setOcrEngine(async (i, scale) =>
+    scale === 1 ? screens[i.base64] : screens[i.base64].map((r) => r.replace("X:101", scale === 2 ? "X:151" : "X:152")),
+  );
 
 describe("on-device reader", () => {
   it("reads a recon, a battle mail and a buff screen together and verifies them", async () => {
@@ -137,6 +148,20 @@ describe("on-device reader", () => {
     const r = await readScreens([img("recon5")]);
     expect(r.verified).toBe(false);
     await expect(localReader.analyze({ images: [img("recon5")], systemPrompt: "", userPrompt: "" }, { extra: { strict: "1" } })).rejects.toThrow(/not certain/);
+  });
+  it("breaks a tie with a third reading: two matching readings win over one that lost a digit", async () => {
+    screens.scrolled = fx.mailScrolled;
+    // The 2x pass loses the leading 8 of the attacker's 864 dead; the 1x and 1.5x passes agree.
+    setOcrEngine(async (i, scale) => (scale === 2 ? i.base64 === "scrolled" ? fx.mailScrolled.map((r) => r.replace(/^Dead/, "64  |  Dead")) : screens[i.base64] : screens[i.base64]));
+    const r = await readScreens([img("scrolled")]);
+    expect(r.verified).toBe(true);
+    expect(r.battle?.attacker.dead).toBe(864);
+  });
+  it("refuses when no two readings agree", async () => {
+    screens.scrolled = fx.mailScrolled;
+    setOcrEngine(async (i, scale) => screens[i.base64].map((r) => r.replace("X:101", `X:${100 + Math.round(scale * 10)}`)));
+    const r = await readScreens([img("scrolled")]);
+    expect(r.verified).toBe(false);
   });
   it("still returns a best-effort reading when not strict, marked unverified", async () => {
     flaky();

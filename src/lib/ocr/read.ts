@@ -80,8 +80,33 @@ function mergeBattle(a: BattleRead, b: BattleRead): BattleRead {
 
 interface Read<T> {
   value: T;
-  /** Two independent readings gave exactly the same values. */
+  /** At least two independent readings gave exactly the same critical values. */
   agreed: boolean;
+}
+
+/**
+ * Picks the reading two independent passes agree on. With two passes that means both; if they disagree a
+ * third pass at another size breaks the tie. The agreed reading must also pass the game's arithmetic.
+ * With no such pair the reading is returned as not agreed.
+ */
+async function consensus<T extends { verified: boolean }>(
+  img: ImageInput,
+  parse: (rows: string[]) => T,
+  critical: (t: T) => unknown,
+  merge: (a: T, b: T) => T,
+  rowsFirst: string[],
+  rowsSecond: string[],
+): Promise<Read<T>> {
+  const reads = [parse(rowsFirst), parse(rowsSecond)];
+  if (!same(critical(reads[0]), critical(reads[1]))) reads.push(parse(await readRows(img, 1.5)));
+  for (let i = 0; i < reads.length; i++) {
+    for (let j = i + 1; j < reads.length; j++) {
+      if (same(critical(reads[i]), critical(reads[j])) && (reads[i].verified || reads[j].verified)) {
+        return { value: merge(reads[i], reads[j]), agreed: true };
+      }
+    }
+  }
+  return { value: reads.find((r) => r.verified) ?? reads[0], agreed: false };
 }
 
 /**
@@ -103,18 +128,16 @@ export async function readScreens(images: ImageInput[]): Promise<ScreenReading> 
     const kind: ScreenKind = classify(a) !== "unknown" ? classify(a) : classify(b);
     const label = `screenshot ${i + 1}`;
     if (kind === "recon") {
-      const pa = parseRecon(a);
-      const pb = parseRecon(b);
-      const agreed = same(criticalRecon(pa), criticalRecon(pb));
-      recons.push({ value: mergeRecon(pa, pb), agreed });
-      if (!agreed) problems.push(`${label}: two readings of the recon differ`);
+      const r = await consensus(img, parseRecon, criticalRecon, mergeRecon, a, b);
+      const agreed = r.agreed;
+      recons.push(r);
+      if (!agreed) problems.push(`${label}: the readings of the recon do not agree`);
       recognised++;
     } else if (kind === "mail") {
-      const pa = parseBattleMail(a);
-      const pb = parseBattleMail(b);
-      const agreed = same(criticalBattle(pa), criticalBattle(pb));
-      mails.push({ value: mergeBattle(pa, pb), agreed });
-      if (!agreed) problems.push(`${label}: two readings of the battle result differ`);
+      const r = await consensus(img, parseBattleMail, criticalBattle, mergeBattle, a, b);
+      const agreed = r.agreed;
+      mails.push(r);
+      if (!agreed) problems.push(`${label}: the readings of the battle result do not agree`);
       recognised++;
     } else if (kind === "reconFailed") {
       reconFailed = true;
@@ -143,7 +166,7 @@ export async function readScreens(images: ImageInput[]): Promise<ScreenReading> 
     !!(recon || mail || reconFailed) &&
     (!recon || (recon.agreed && recon.value.verified)) &&
     (!mail || (mail.agreed && mail.value.verified)) &&
-    !problems.some((p) => /differ|no recon/.test(p));
+    !problems.some((p) => /do not agree|no recon/.test(p));
 
   const confidence = verified ? "high" : "low";
   const note = verified

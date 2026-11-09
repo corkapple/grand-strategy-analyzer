@@ -55,7 +55,9 @@ export function classify(rows: string[]): ScreenKind {
   const t = rows.join("\n");
   if (/Recon\s+Failed|Anti-?\s*Recon/i.test(t)) return "reconFailed";
   if (/Recon\s+Successful/i.test(t)) return "recon";
-  if (/Crew\s+Details/i.test(t) && /Formation/i.test(t)) return "mail";
+  // The "Crew Details" bar scrolls out of view in many screenshots, so also recognise the mail by its content.
+  const mailBody = /Formation/i.test(t) && /Total\s+Associates/i.test(t) && /Wounded|Casualties\s+Reduced|Alive/i.test(t);
+  if ((/Crew\s+Details/i.test(t) && /Formation/i.test(t)) || mailBody) return "mail";
   if (/Buff\s+Comparison/i.test(t) || (/Crew\s+ATK/i.test(t) && (t.match(/%/g) ?? []).length >= 4)) return "buff";
   if (/Battle\s+Details/i.test(t) && /Total\s+Kills/i.test(t)) return "details";
   return "unknown";
@@ -346,14 +348,15 @@ export function parseBattleMail(rows: string[]): BattleRead {
     return n ? n.value : null;
   };
   const destroyed = val(/Destroyed/i);
-  const remaining = val(/Remaining/i);
+  const remaining = val(/[RrKk]emaining/); // the reader sometimes turns the R into a k
   const repair = val(/Requires\s+Repair/i) ?? 0;
   const wall = val(/Wall\s+Durability/i);
   const traps = {
     total: trapsTotal ?? (destroyed !== null && remaining !== null ? destroyed + remaining + repair : 0),
     requiresRepair: repair,
     destroyed: destroyed ?? 0,
-    remaining: remaining ?? 0,
+    // Not read: it is what is left after the destroyed traps.
+    remaining: remaining ?? (trapsTotal !== null && destroyed !== null ? Math.max(0, trapsTotal - destroyed - repair) : 0),
   };
 
   const verified = problems.length === 0;
