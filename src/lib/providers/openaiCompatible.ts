@@ -26,6 +26,11 @@ export interface OpenAICompatibleSpec {
   capabilities: ProviderCapabilities;
   /** Request `response_format: json_object` (not every server supports it). */
   jsonMode?: boolean;
+  /**
+   * Preference order for picking a vision model from the provider's model list when the default no longer
+   * exists (providers rename and retire models). Only used while the user has not chosen a model themselves.
+   */
+  discoverModel?: RegExp[];
   /** Output token cap (reasoning models spend part of it thinking, so give them room). */
   maxTokens?: number;
   extraHeaders?: Record<string, string>;
@@ -54,6 +59,18 @@ export function createOpenAICompatible(
     return h;
   };
   const baseOf = (cfg: ProviderConfig) => cfg.baseUrl?.trim() || spec.defaultBaseUrl;
+  const discovered = new Map<string, string>();
+
+  /** The provider's own model list, filtered by the preferred vision models; null when none match. */
+  async function discover(cfg: ProviderConfig, skip: string): Promise<string | null> {
+    const list = await getJson<{ data?: { id: string }[] }>(spec.id, joinUrl(baseOf(cfg), "models"), headersFor(cfg));
+    const ids = (list.data ?? []).map((m) => m.id).filter((id) => id !== skip);
+    for (const re of spec.discoverModel ?? []) {
+      const hit = ids.find((id) => re.test(id));
+      if (hit) return hit;
+    }
+    return null;
+  }
 
   /** One request to one model. `timeoutMs` undefined = the default request timeout. */
   async function callOnce(
@@ -178,11 +195,23 @@ export function createOpenAICompatible(
     defaultConfig: { baseUrl: spec.defaultBaseUrl, model: spec.defaultModel },
 
     async analyze(req: VisionRequest, cfg): Promise<VisionResponse> {
-      const model = cfg.model?.trim() || spec.defaultModel;
-      if (spec.id === "openrouter" && model === "openrouter/free") {
+      const chosen = cfg.model?.trim() || spec.defaultModel;
+      if (spec.id === "openrouter" && chosen === "openrouter/free") {
         return analyzeWithFallback(req, cfg);
       }
-      return callOnce(req, cfg, model);
+      const userPicked = chosen !== spec.defaultModel;
+      const model = (!userPicked && discovered.get(spec.id)) || chosen;
+      try {
+        return await callOnce(req, cfg, model);
+      } catch (e) {
+        // The default model was retired: ask the provider what it has now and try the best match once.
+        if (!spec.discoverModel || userPicked || !(e instanceof ProviderError) || !(e.status === 404 || (e.status === 400 && /decommission|does not exist|not found/i.test(e.message)))) throw e;
+        const found = await discover(cfg, model).catch(() => null);
+        if (!found) throw e;
+        const res = await callOnce(req, cfg, found);
+        discovered.set(spec.id, found);
+        return { ...res, note: [res.note, `${model} is no longer offered; used ${found}`].filter(Boolean).join("; ") };
+      }
     },
 
     async testConnection(cfg) {
@@ -261,6 +290,7 @@ export const groq = createOpenAICompatible({
   group: "free-api",
   defaultBaseUrl: "https://api.groq.com/openai/v1",
   defaultModel: "meta-llama/llama-4-scout-17b-16e-instruct",
+  discoverModel: [/llama-4-(maverick|scout)/i, /vision/i, /qwen.*vl/i],
   capabilities: {
     vision: true,
     requiresApiKey: true,
@@ -291,6 +321,7 @@ export const mistral = createOpenAICompatible({
   group: "free-api",
   defaultBaseUrl: "https://api.mistral.ai/v1",
   defaultModel: "mistral-small-latest",
+  discoverModel: [/pixtral/i, /mistral-(small|medium)/i],
   capabilities: {
     vision: true,
     requiresApiKey: true,

@@ -48,10 +48,13 @@ except Google Chrome or Microsoft Edge (only for "Browser Web Automation" mode).
 - **macOS (on a Mac):** `npm run tauri:build:mac-arm` (Apple Silicon) or `npm run tauri:build:mac-intel`
   (needs `rustup target add x86_64-apple-darwin`). Output: `src-tauri/target/<target>/release/bundle/`
   (`macos/*.app`, `dmg/*.dmg`).
-- **Windows:** must be built on Windows. Easiest: push this project to GitHub and run the
-  "Build desktop apps" workflow (`.github/workflows/build.yml`); it builds Windows plus both Mac
-  architectures and attaches the installers as downloadable artifacts. On a Windows PC with Rust and
-  MSVC Build Tools you can also run `npm run tauri:build:win`.
+- **Releasing from a Mac (no GitHub Actions minutes):** `npm run release:mac` builds the Apple Silicon app and attaches it to the
+  release for the version in `package.json` (`npm run release:mac -- --intel` also builds the Intel app). Bump the version in
+  `package.json`, `src-tauri/tauri.conf.json` and `src-tauri/Cargo.toml` first, and commit.
+- **Windows:** must be built on Windows. Run the "Build desktop apps" workflow by hand when you need it:
+  `gh workflow run build.yml -f tag=v0.1.9`. It builds the Windows installers and attaches them to that release. It never
+  runs by itself, because macOS minutes cost 10x and Windows 2x on a private repository (add `-f mac=true` to also build the
+  Mac apps on GitHub). On a Windows PC with Rust and MSVC Build Tools you can also run `npm run tauri:build:win`.
 - Builds are **unsigned**. macOS: right-click the app, choose Open the first time (or
   `xattr -dr com.apple.quarantine "/Applications/Grand Strategy Analyzer.app"`). Windows SmartScreen:
   More info, then Run anyway. Removing these warnings needs an Apple Developer ID / a code-signing

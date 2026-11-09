@@ -1,7 +1,7 @@
 {
   "name": "grand-strategy-analyzer",
   "private": true,
-  "version": "0.1.8",
+  "version": "0.1.9",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -18,7 +18,8 @@
     "bridge:install": "npm --prefix bridge install",
     "bridge": "node bridge/server.mjs",
     "bridge:check": "node bridge/check.mjs",
-    "prepare:bundle": "node scripts/prepare-bundle.mjs"
+    "prepare:bundle": "node scripts/prepare-bundle.mjs",
+    "release:mac": "bash scripts/release-mac.sh"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.1.1",

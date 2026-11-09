@@ -260,6 +260,8 @@ export const BattleReportSchema = z.object({
 
 export type BattleReport = z.output<typeof BattleReportSchema>;
 
+import { repairSide } from "./identities";
+
 export function parseBattleReport(text: string): BattleReport {
   let json: unknown;
   try {
@@ -290,6 +292,18 @@ export function parseBattleReport(text: string): BattleReport {
       "recon",
     );
   }
+  // Check the model's numbers against the game's own arithmetic and repair what the totals prove wrong.
+  const notes: string[] = [];
+  for (const who of ["attacker", "defender"] as const) {
+    const r = repairSide(b[who]);
+    if (r.changes.length) {
+      b[who] = { ...b[who], ...r.side };
+      notes.push(`Corrected ${who === "attacker" ? "your side" : "the defender"} using the game's totals: ${r.changes.join(", ")}.`);
+    } else if (!r.consistent) {
+      notes.push(`${who === "attacker" ? "Your side's" : "The defender's"} numbers do not add up; one of them may be misread.`);
+    }
+  }
+  if (notes.length) b.notes = [b.notes, ...notes].filter(Boolean).join(" ");
   return b;
 }
 

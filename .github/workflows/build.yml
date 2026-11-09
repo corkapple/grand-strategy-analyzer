@@ -1,84 +1,96 @@
 name: Build desktop apps
 
-# Builds installers for macOS (Apple Silicon + Intel) and Windows.
-# Run manually (Actions tab -> "Build desktop apps" -> Run workflow) or push a tag like v0.1.0.
-# Pushing a tag also publishes a GitHub Release with every installer attached.
-# Manual runs only produce downloadable "Artifacts".
+# GitHub Actions minutes are limited on a private repository, and macOS minutes cost 10x (Windows 2x).
+# So nothing builds automatically. The Mac apps are built on a Mac with `npm run release:mac`; this
+# workflow builds the Windows installers (the one thing a Mac cannot build) when you ask for it:
+#   gh workflow run build.yml -f tag=v0.1.9
+# Add -f mac=true to also build both Mac apps on GitHub (about 10x the cost; normally unnecessary).
 permissions:
-  contents: write # lets the release job publish to the Releases page
+  contents: write # lets a job attach installers to the release
 
 on:
   workflow_dispatch:
-  push:
-    tags: ["v*"]
+    inputs:
+      tag:
+        description: "Release tag the installers are attached to (for example v0.1.9). It must already exist."
+        required: true
+        type: string
+      windows:
+        description: "Build the Windows installers"
+        type: boolean
+        default: true
+      mac:
+        description: "Also build the Mac apps on GitHub (10x minutes)"
+        type: boolean
+        default: false
 
 jobs:
-  build:
+  windows:
+    if: ${{ inputs.windows }}
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      # Reuses compiled dependencies between builds, which is most of the build time (and the minutes).
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build app
+        env:
+          VITE_COMMUNITY_URL: ${{ vars.COMMUNITY_URL }}
+        run: npx tauri build --target x86_64-pc-windows-msvc
+      - name: Attach to the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          files=(src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi)
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "Grand Strategy Analyzer $TAG" --generate-notes
+          gh release upload "$TAG" "${files[@]}" --clobber
+
+  mac:
+    if: ${{ inputs.mac }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: macos-latest # Apple Silicon runner
             target: aarch64-apple-darwin
-          - os: macos-15-intel # Intel runner (label may change; check GitHub's runner list)
+          - os: macos-15-intel
             target: x86_64-apple-darwin
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-
-      # The Node installed here is copied into the app as the bridge runtime
-      # (scripts/prepare-bundle.mjs), so it must match the runner's OS/arch.
+        with:
+          ref: ${{ inputs.tag }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
-
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
-
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: npm install --no-audit --no-fund
       - name: Build app
         env:
           VITE_COMMUNITY_URL: ${{ vars.COMMUNITY_URL }}
         run: npx tauri build --target ${{ matrix.target }}
-
-      - name: Upload installers
-        uses: actions/upload-artifact@v4
-        with:
-          name: grand-strategy-analyzer-${{ matrix.target }}
-          path: |
-            src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
-            src-tauri/target/${{ matrix.target }}/release/bundle/nsis/*.exe
-            src-tauri/target/${{ matrix.target }}/release/bundle/msi/*.msi
-          if-no-files-found: error
-
-  release:
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: dist-release
-          merge-multiple: true
-
-      - name: Publish release
+      - name: Attach to the release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ inputs.tag }}
         run: |
-          find dist-release -type f
-          cat > notes.md <<'EOF'
-          Unsigned builds, so your OS will warn on first launch.
-          - **Windows:** run the `.exe` (or `.msi`). SmartScreen: More info -> Run anyway.
-          - **macOS:** open the `.dmg` for your Mac (`aarch64` = Apple Silicon, `x64` = Intel), drag to Applications, then right-click -> Open the first time.
-          EOF
-          # File names contain spaces, so collect them into an array instead of splitting a string.
-          mapfile -d '' files < <(find dist-release -type f -print0)
-          gh release create "$TAG" "${files[@]}" \
-            --repo "$GITHUB_REPOSITORY" --title "Grand Strategy Analyzer $TAG" \
-            --generate-notes --notes-file notes.md
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "Grand Strategy Analyzer $TAG" --generate-notes
+          gh release upload "$TAG" src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg --clobber
