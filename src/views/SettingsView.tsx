@@ -204,7 +204,7 @@ export default function SettingsView() {
         </div>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={s.autoFallback} onChange={(e) => s.setAutoFallback(e.target.checked)} />
-          Then also try my other free providers that have a key (Gemini, OpenRouter, Groq, GitHub Models, Mistral)
+          Then also try my other free providers that have a key (Gemini, OpenRouter, Groq, GitHub Models)
         </label>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={s.meshGuides} onChange={(e) => s.setMeshGuides(e.target.checked)} />

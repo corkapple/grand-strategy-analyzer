@@ -40,8 +40,9 @@ choose it under **Provider**, paste its key into **API key**, and click **Test c
 - **GitHub Models (free for GitHub accounts).** Create a token at **https://github.com/settings/personal-access-tokens**
   (a "fine-grained" token with the **Models: read** permission) and paste that token as the key. It is not your
   password. It comes with a small daily allowance.
-- **Mistral (free Experiment plan).** Get a key at **https://console.mistral.ai**. The free plan may use your requests to
-  improve their models.
+
+**Mistral** has no reliably free API, so the app doesn't use it automatically. Its chat, **Le Chat**, is free: use it from
+**Finish in a web chat instead** (see [Using the app](USING-THE-APP.md#if-the-ai-service-is-busy)).
 
 ## Set up an automatic backup (recommended)
 

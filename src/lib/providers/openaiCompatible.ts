@@ -317,8 +317,8 @@ export const githubModels = createOpenAICompatible({
 
 export const mistral = createOpenAICompatible({
   id: "mistral",
-  label: "Mistral (free Experiment plan)",
-  group: "free-api",
+  label: "Mistral (API key, not free)",
+  group: "paid-api",
   defaultBaseUrl: "https://api.mistral.ai/v1",
   defaultModel: "mistral-small-latest",
   discoverModel: [/pixtral/i, /mistral-(small|medium)/i],
@@ -327,7 +327,7 @@ export const mistral = createOpenAICompatible({
     requiresApiKey: true,
     local: false,
     notes:
-      "Free key at console.mistral.ai (Experiment plan). The free plan may use your requests to improve Mistral's models. If images are rejected, set a vision model such as pixtral-12b-2409 in Model.",
+      "Mistral's API is not reliably free. For free use, choose \"Finish in a web chat instead\" and open Mistral Le Chat. If images are rejected, set a vision model such as pixtral-12b-2409 in Model.",
   },
 });
 

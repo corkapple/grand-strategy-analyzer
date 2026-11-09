@@ -54,6 +54,7 @@ export const CHAT_SITES = [
   { id: "openrouter", label: "OpenRouter chat" },
   { id: "gemini", label: "Gemini chat" },
   { id: "deepseek", label: "DeepSeek chat" },
+  { id: "mistral", label: "Mistral Le Chat" },
 ] as const;
 
 export async function openChat(site: string): Promise<void> {
@@ -65,6 +66,7 @@ export async function openChat(site: string): Promise<void> {
       openrouter: "https://openrouter.ai/workspaces/default/chat",
       gemini: "https://gemini.google.com/app",
       deepseek: "https://chat.deepseek.com/",
+      mistral: "https://chat.mistral.ai/chat",
     };
     window.open(urls[site], "_blank", "noopener");
   }

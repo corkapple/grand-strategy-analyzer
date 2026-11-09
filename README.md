@@ -53,7 +53,7 @@ what to send, and learns from every fight you win.
 | **History** | Every recon and battle, paired automatically, with win rates. |
 | **Community stats** | Win rates built from everyone's anonymous results (see [Privacy](docs/PRIVACY.md)). |
 | **Stays up to date** | Reads game guides from the internet and proposes updates. You approve each one. |
-| **Never stuck** | If one free AI service runs out, the app tries the next one you set up (Gemini, OpenRouter, Groq, GitHub Models, Mistral). A free community network can read guides with no key at all. |
+| **Never stuck** | If one free AI service runs out, the app tries the next one you set up (Gemini, OpenRouter, Groq, GitHub Models). A free community network can read guides with no key at all. |
 
 ## Get started in 5 minutes
 

@@ -290,6 +290,7 @@ fn open_chat(site: String) -> Result<(), String> {
         "openrouter" => "https://openrouter.ai/workspaces/default/chat",
         "gemini" => "https://gemini.google.com/app",
         "deepseek" => "https://chat.deepseek.com/",
+        "mistral" => "https://chat.mistral.ai/chat",
         "chatgpt" => "https://chatgpt.com/",
         _ => return Err("unknown chat site".into()),
     };

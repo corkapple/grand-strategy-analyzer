@@ -24,7 +24,7 @@ export function unusable(c: Candidate): string | null {
  * Providers with a free tier. After the chosen second provider, any of these that has a key is tried
  * too, so one provider running out does not stop the app. Paid ones are never added automatically.
  */
-export const FREE_TIER: ProviderId[] = ["gemini", "openrouter", "groq", "github", "mistral"];
+export const FREE_TIER: ProviderId[] = ["gemini", "openrouter", "groq", "github"];
 
 /**
  * Fallbacks, in order: the chosen second provider, then your other free providers that have a key,

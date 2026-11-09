@@ -112,7 +112,7 @@ Free services sometimes say "rate limit" or time out. The app first tries your s
 busy:
 
 1. Click **Finish in a web chat instead (copy prompt)**.
-2. Click **Open Gemini chat** (or OpenRouter or DeepSeek). Your web browser opens the chat.
+2. Click **Open Gemini chat** (or OpenRouter, DeepSeek or Mistral Le Chat). Your web browser opens the chat.
 3. Paste (Ctrl/Cmd+V). The instructions are already copied.
 4. Click **Copy all screenshots as one image** in the app, then paste that into the chat as well.
 5. Send it. When the AI answers, copy its reply, paste it into the app's box, and click **Parse reply**.

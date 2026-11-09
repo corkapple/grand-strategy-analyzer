@@ -106,7 +106,7 @@ describe("free-provider chain and Mesh", () => {
 
   it("tries the chosen second provider, then every other free provider that has a key, then Mesh", () => {
     const s = withKeys({ openrouter: "o", groq: "g", mistral: "m", anthropic: "paid", openai: "paid" });
-    expect(ids(s)).toEqual(["openrouter", "groq", "mistral", "mesh"]);
+    expect(ids(s)).toEqual(["openrouter", "groq", "mesh"]); // Mistral's API is not free, so it is never added on its own
   });
   it("never adds paid providers on its own, and skips ones without a key", () => {
     const s = withKeys({ openrouter: "o", openai: "k", anthropic: "k", deepseek: "k" });
