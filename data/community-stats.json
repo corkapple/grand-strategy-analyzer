@@ -1,5 +1,18 @@
 {
-  "generatedAt": "2026-11-09T09:38:29.188Z",
-  "samples": 0,
-  "groups": []
+  "generatedAt": "2026-11-10T11:20:11.174Z",
+  "samples": 12,
+  "groups": [
+    {
+      "enemy": "hitmen",
+      "lead": "bruisers",
+      "n": 3,
+      "wins": 0,
+      "winRate": 0,
+      "avgOurLoss": 0.005,
+      "medianOurLoss": 0.006,
+      "avgEnemyLoss": 0.147,
+      "medianWinRatio": null,
+      "cheapWins": 0
+    }
+  ]
 }
